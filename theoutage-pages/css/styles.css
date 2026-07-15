@@ -25,7 +25,7 @@
 
   /* Color: severity */
   --severity-p3: #3fb950;
-  --severity-p2: #d29922;
+  --severity-p2: #4d9fff;
   --severity-p1: #f85149;
 
   /* Color: status */
@@ -334,7 +334,7 @@ textarea:focus {
 }
 .badge-severity-P2 {
   color: var(--severity-p2);
-  background: rgba(210, 153, 34, 0.12);
+  background: rgba(77, 159, 255, 0.12);
 }
 .badge-severity-P1 {
   color: var(--severity-p1);

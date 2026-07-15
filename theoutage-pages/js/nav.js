@@ -18,6 +18,7 @@ export async function initNav() {
         mount.innerHTML = `
           <a href="/submit.html">Submit outage</a>
           <a href="/dashboard.html">My submissions</a>
+          ${user.role === "admin" ? `<a href="/admin.html">Admin</a>` : ""}
           <span class="text-secondary">${escapeText(user.display_name)}</span>
           <button class="btn btn-sm" id="logout-btn" type="button">Log out</button>
         `;
@@ -51,4 +52,19 @@ export async function requireUser() {
 
 export function isModerator(user) {
   return !!user && (user.role === "moderator" || user.role === "admin");
+}
+
+export function isAdmin(user) {
+  return !!user && user.role === "admin";
+}
+
+/** Redirects to / (silently, no error shown) if not an admin. */
+export async function requireAdmin() {
+  const user = await requireUser();
+  if (!user) return null;
+  if (!isAdmin(user)) {
+    window.location.href = "/";
+    return null;
+  }
+  return user;
 }

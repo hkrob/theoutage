@@ -23,10 +23,13 @@ export async function destroySession(env: Env, sessionId: string): Promise<void>
 }
 
 export async function getUserForSession(env: Env, sessionId: string): Promise<User | null> {
+  // Frozen users fall out of this query (not deleted) so a session created
+  // before a freeze stops authenticating immediately, and unfreezing later
+  // restores it automatically without recreating anything.
   const row = await env.DB.prepare(
     `SELECT u.* FROM sessions s
      JOIN users u ON u.id = s.user_id
-     WHERE s.id = ? AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
+     WHERE s.id = ? AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now') AND u.frozen = 0`
   )
     .bind(sessionId)
     .first<User>();

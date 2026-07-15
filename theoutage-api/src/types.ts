@@ -24,6 +24,7 @@ export interface User {
   display_name: string;
   created_at: string;
   role: Role;
+  frozen: number;
 }
 
 export interface Variables {

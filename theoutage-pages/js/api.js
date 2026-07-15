@@ -95,4 +95,11 @@ export const api = {
   removeComment: (id, reason, internal_note) =>
     apiFetch(`/moderation/comments/${id}/remove`, { method: "POST", body: { reason, internal_note } }),
   moderationLog: (params) => apiFetch(`/moderation/log${qs(params)}`),
+
+  // ---- admin ----
+  listUsers: (params) => apiFetch(`/admin/users${qs(params)}`),
+  setUserRole: (id, role) => apiFetch(`/admin/users/${id}/role`, { method: "PATCH", body: { role } }),
+  freezeUser: (id) => apiFetch(`/admin/users/${id}/freeze`, { method: "POST" }),
+  unfreezeUser: (id) => apiFetch(`/admin/users/${id}/unfreeze`, { method: "POST" }),
+  resetUserAccess: (id) => apiFetch(`/admin/users/${id}/reset-access`, { method: "POST" }),
 };

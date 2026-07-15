@@ -8,6 +8,7 @@ const el = document.getElementById("callback-message");
 const REASON_MESSAGES = {
   missing_token: "That link is missing its token.",
   invalid_or_expired: "That link is invalid or has expired — magic links are single-use and expire after 15 minutes.",
+  account_frozen: "This account has been frozen. Contact support.",
 };
 
 if (status === "ok") {

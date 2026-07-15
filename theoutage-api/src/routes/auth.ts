@@ -90,6 +90,13 @@ auth.get("/verify", async (c) => {
     return c.redirect(`${origin}/auth-callback.html?status=error&reason=invalid_or_expired`, 302);
   }
 
+  const tokenUser = await c.env.DB.prepare(`SELECT frozen FROM users WHERE id = ?`)
+    .bind(row.user_id)
+    .first<{ frozen: number }>();
+  if (tokenUser?.frozen) {
+    return c.redirect(`${origin}/auth-callback.html?status=error&reason=account_frozen`, 302);
+  }
+
   await c.env.DB.batch([
     c.env.DB.prepare(`UPDATE auth_tokens SET used = 1 WHERE id = ?`).bind(token),
     c.env.DB.prepare(`UPDATE users SET email_verified = 1 WHERE id = ?`).bind(row.user_id),
@@ -122,6 +129,10 @@ auth.post("/login", async (c) => {
   // avoids leaking which case applies.
   if (!user || !user.password_hash || !(await verifyPassword(password, user.password_hash))) {
     return c.json({ error: "Invalid email or password" }, 401);
+  }
+
+  if (user.frozen) {
+    return c.json({ error: "This account has been frozen. Contact support." }, 403);
   }
 
   if (!user.email_verified) {

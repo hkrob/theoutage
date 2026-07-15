@@ -75,6 +75,8 @@ admin.post("/users", async (c) => {
 
 // ------------------------------------------------------------------
 // GET /api/admin/users?q=&page=&pageSize=
+// outage_count / storage_bytes are computed per user (own outages and the
+// artifacts attached to them) so the admin page can show usage at a glance.
 // ------------------------------------------------------------------
 admin.get("/users", async (c) => {
   const q = (c.req.query("q") ?? "").trim();
@@ -85,18 +87,22 @@ admin.get("/users", async (c) => {
   const where: string[] = [];
   const params: string[] = [];
   if (q) {
-    where.push("(email LIKE ? OR display_name LIKE ?)");
+    where.push("(u.email LIKE ? OR u.display_name LIKE ?)");
     params.push(`%${q}%`, `%${q}%`);
   }
   const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
   const { results } = await c.env.DB.prepare(
-    `SELECT ${SAFE_USER_COLUMNS} FROM users ${whereSql} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    `SELECT u.id, u.email, u.email_verified, u.display_name, u.created_at, u.role, u.frozen,
+            (SELECT COUNT(*) FROM outages o WHERE o.author_id = u.id) AS outage_count,
+            (SELECT COALESCE(SUM(a.size_bytes), 0) FROM artifacts a
+             JOIN outages o2 ON o2.id = a.outage_id WHERE o2.author_id = u.id) AS storage_bytes
+     FROM users u ${whereSql} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`
   )
     .bind(...params, pageSize, offset)
     .all();
 
-  const totalRow = await c.env.DB.prepare(`SELECT COUNT(*) AS n FROM users ${whereSql}`)
+  const totalRow = await c.env.DB.prepare(`SELECT COUNT(*) AS n FROM users u ${whereSql}`)
     .bind(...params)
     .first<{ n: number }>();
 
@@ -183,6 +189,35 @@ admin.post("/users/:id/unfreeze", async (c) => {
        VALUES (?, 'unfreeze_user', 'user', ?, NULL)`
     ).bind(actor.id, id),
   ]);
+
+  const updated = await c.env.DB.prepare(`SELECT ${SAFE_USER_COLUMNS} FROM users WHERE id = ?`)
+    .bind(id)
+    .first();
+  return c.json({ user: updated });
+});
+
+// ------------------------------------------------------------------
+// POST /api/admin/users/:id/verify-email
+// Manually marks an account verified without them clicking a magic link
+// (e.g. an admin vouching for someone who's having email trouble).
+// ------------------------------------------------------------------
+admin.post("/users/:id/verify-email", async (c) => {
+  const id = parseInt(c.req.param("id") ?? "", 10);
+  if (!id) return c.json({ error: "Invalid id" }, 400);
+
+  const target = await c.env.DB.prepare(`SELECT * FROM users WHERE id = ?`).bind(id).first<User>();
+  if (!target) return c.json({ error: "Not found" }, 404);
+
+  if (!target.email_verified) {
+    const actor = c.get("user")!;
+    await c.env.DB.batch([
+      c.env.DB.prepare(`UPDATE users SET email_verified = 1 WHERE id = ?`).bind(id),
+      c.env.DB.prepare(
+        `INSERT INTO moderation_log (moderator_id, action, target_type, target_id, reason)
+         VALUES (?, 'verify_email', 'user', ?, NULL)`
+      ).bind(actor.id, id),
+    ]);
+  }
 
   const updated = await c.env.DB.prepare(`SELECT ${SAFE_USER_COLUMNS} FROM users WHERE id = ?`)
     .bind(id)

@@ -1,6 +1,6 @@
 import { api, ApiError } from "./api.js";
 import { requireAdmin } from "./nav.js";
-import { escapeHtml, formatDate, alertHtml, emptyState } from "./render.js";
+import { escapeHtml, formatDate, formatBytes, alertHtml, emptyState } from "./render.js";
 
 const alertArea = document.getElementById("admin-alert-area");
 const area = document.getElementById("admin-users-area");
@@ -41,11 +41,16 @@ function rowHtml(u) {
           <span class="text-secondary">${escapeHtml(u.email)}</span>
           <span class="mono">joined ${formatDate(u.created_at)}</span>
         </div>
+        <div class="outage-card-meta">
+          <span class="text-muted">${u.outage_count} submission${u.outage_count === 1 ? "" : "s"}</span>
+          <span class="text-muted">${formatBytes(u.storage_bytes)} uploaded</span>
+        </div>
       </div>
       <div class="admin-user-actions">
         <select class="role-select" data-id="${u.id}" ${isSelf ? "disabled" : ""}>
           ${ROLES.map((r) => `<option value="${r}" ${r === u.role ? "selected" : ""}>${r}</option>`).join("")}
         </select>
+        ${!u.email_verified ? `<button class="btn btn-sm verify-email-btn" data-id="${u.id}" type="button">Verify email</button>` : ""}
         ${
           isSelf
             ? `<span class="text-muted" style="font-size: var(--text-xs); text-align:center;">(you)</span>`
@@ -99,6 +104,20 @@ function wireRowEvents() {
       }
     });
   });
+
+  document.querySelectorAll(".verify-email-btn").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      try {
+        await api.verifyUserEmail(btn.dataset.id);
+        showAlert("success", "Email marked verified.");
+        await load(searchInput.value.trim());
+      } catch (err) {
+        showAlert("error", err instanceof ApiError ? err.message : "Couldn't verify email.");
+        btn.disabled = false;
+      }
+    })
+  );
 
   document.querySelectorAll(".freeze-btn").forEach((btn) =>
     btn.addEventListener("click", async () => {

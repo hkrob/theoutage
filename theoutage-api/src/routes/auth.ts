@@ -61,9 +61,17 @@ auth.post("/magic-link", async (c) => {
     .run();
 
   const link = `${c.env.APP_ORIGIN}/api/auth/verify?token=${tokenId}`;
-  await sendMagicLinkEmail(c.env, email, link);
+  try {
+    await sendMagicLinkEmail(c.env, email, link);
+  } catch (err) {
+    // Every request reaches this point regardless of whether the email was
+    // already registered, so surfacing a real error here doesn't leak
+    // anything — unlike password-reset/request below, where only existing
+    // accounts get this far.
+    console.error("[auth] sendMagicLinkEmail failed:", err);
+    return c.json({ error: "Couldn't send the sign-in email right now. Try again in a moment." }, 500);
+  }
 
-  // Always 200 — don't leak whether the address was already registered.
   return c.json({ ok: true });
 });
 
@@ -182,7 +190,13 @@ auth.post("/password-reset/request", async (c) => {
     // Points at a frontend page (not this Worker) that collects the new
     // password and POSTs it to /password-reset/confirm — per spec §5.
     const link = `${c.env.APP_ORIGIN}/reset-password.html?token=${tokenId}`;
-    await sendPasswordResetEmail(c.env, email, link);
+    try {
+      await sendPasswordResetEmail(c.env, email, link);
+    } catch (err) {
+      // Swallow (don't 500) — only existing accounts reach this send, so
+      // surfacing an error here would leak registration status.
+      console.error("[auth] sendPasswordResetEmail failed:", err);
+    }
   }
 
   return c.json({ ok: true });

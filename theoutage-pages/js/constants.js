@@ -15,7 +15,11 @@ export const CATEGORIES = [
   "other",
 ];
 
-export const SEVERITIES = ["low", "medium", "high"];
+export const SEVERITIES = [
+  ["P3", "P3 — Minor"],
+  ["P2", "P2 — Major"],
+  ["P1", "P1 — Critical"],
+];
 
 export const STATUSES = ["draft", "pending_review", "published", "rejected"];
 

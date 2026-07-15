@@ -24,9 +24,9 @@
   --accent-hover: #6fb2ff;
 
   /* Color: severity */
-  --severity-low: #3fb950;
-  --severity-medium: #d29922;
-  --severity-high: #f85149;
+  --severity-p3: #3fb950;
+  --severity-p2: #d29922;
+  --severity-p1: #f85149;
 
   /* Color: status */
   --status-draft: #6b7688;
@@ -139,8 +139,8 @@ a:hover {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--severity-low);
-  box-shadow: 0 0 8px var(--severity-low);
+  background: var(--severity-p3);
+  box-shadow: 0 0 8px var(--severity-p3);
   flex-shrink: 0;
 }
 
@@ -328,16 +328,16 @@ textarea:focus {
   white-space: nowrap;
 }
 
-.badge-severity-low {
-  color: var(--severity-low);
+.badge-severity-P3 {
+  color: var(--severity-p3);
   background: rgba(63, 185, 80, 0.12);
 }
-.badge-severity-medium {
-  color: var(--severity-medium);
+.badge-severity-P2 {
+  color: var(--severity-p2);
   background: rgba(210, 153, 34, 0.12);
 }
-.badge-severity-high {
-  color: var(--severity-high);
+.badge-severity-P1 {
+  color: var(--severity-p1);
   background: rgba(248, 81, 73, 0.12);
 }
 

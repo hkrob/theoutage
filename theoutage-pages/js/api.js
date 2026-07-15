@@ -104,4 +104,6 @@ export const api = {
   freezeUser: (id) => apiFetch(`/admin/users/${id}/freeze`, { method: "POST" }),
   unfreezeUser: (id) => apiFetch(`/admin/users/${id}/unfreeze`, { method: "POST" }),
   resetUserAccess: (id) => apiFetch(`/admin/users/${id}/reset-access`, { method: "POST" }),
+  deleteUser: (id, deleteContent) =>
+    apiFetch(`/admin/users/${id}${deleteContent ? "?deleteContent=true" : ""}`, { method: "DELETE" }),
 };

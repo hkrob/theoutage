@@ -61,6 +61,7 @@ function rowHtml(u) {
                   : `<button class="btn btn-sm btn-danger freeze-btn" data-id="${u.id}" type="button">Freeze</button>`
               }
               <button class="btn btn-sm reset-access-btn" data-id="${u.id}" type="button">Reset access</button>
+              <button class="btn btn-sm btn-danger delete-user-btn" data-id="${u.id}" type="button">Delete</button>
             `
         }
       </div>
@@ -144,6 +145,45 @@ function wireRowEvents() {
       } catch (err) {
         showAlert("error", err instanceof ApiError ? err.message : "Couldn't unfreeze account.");
         btn.disabled = false;
+      }
+    })
+  );
+
+  document.querySelectorAll(".delete-user-btn").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      if (!confirm("Delete this account? This can't be undone.")) return;
+      const id = btn.dataset.id;
+      btn.disabled = true;
+      try {
+        await api.deleteUser(id, false);
+        showAlert("success", "Account deleted.");
+        await load(searchInput.value.trim());
+        return;
+      } catch (err) {
+        const hasContentCounts =
+          err instanceof ApiError && err.status === 409 && err.details && typeof err.details.outageCount === "number";
+        if (!hasContentCounts) {
+          showAlert("error", err instanceof ApiError ? err.message : "Couldn't delete this account.");
+          btn.disabled = false;
+          return;
+        }
+        const { outageCount, commentCount } = err.details;
+        const purge = confirm(
+          `This account has ${outageCount} submission(s) and ${commentCount} comment(s). Delete their content too? ` +
+            `This also removes any comments other users left on their submissions, and their uploaded files. This can't be undone.`
+        );
+        if (!purge) {
+          btn.disabled = false;
+          return;
+        }
+        try {
+          await api.deleteUser(id, true);
+          showAlert("success", "Account and content deleted.");
+          await load(searchInput.value.trim());
+        } catch (err2) {
+          showAlert("error", err2 instanceof ApiError ? err2.message : "Couldn't delete this account.");
+          btn.disabled = false;
+        }
       }
     })
   );

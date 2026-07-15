@@ -256,4 +256,99 @@ admin.post("/users/:id/reset-access", async (c) => {
   return c.json({ ok: true });
 });
 
+// ------------------------------------------------------------------
+// DELETE /api/admin/users/:id?deleteContent=true
+// Schema note: outages.author_id and comments.author_id are ON DELETE
+// RESTRICT, so a user can't be deleted while they have either — the caller
+// must opt into deleteContent=true to purge their outages (which cascades
+// to that outage's artifacts and comments — including comments OTHER users
+// left on it) and their own comments (on any outage) first.
+// moderation_log.moderator_id is also RESTRICT and deliberately has no
+// purge option here — deleting someone with moderation history would erase
+// audit trail, so that's always blocked; freeze the account instead.
+// ------------------------------------------------------------------
+admin.delete("/users/:id", async (c) => {
+  const id = parseInt(c.req.param("id") ?? "", 10);
+  if (!id) return c.json({ error: "Invalid id" }, 400);
+
+  const actor = c.get("user")!;
+  if (id === actor.id) return c.json({ error: "You can't delete your own account" }, 400);
+
+  const target = await c.env.DB.prepare(`SELECT * FROM users WHERE id = ?`).bind(id).first<User>();
+  if (!target) return c.json({ error: "Not found" }, 404);
+
+  const modLogRow = await c.env.DB.prepare(`SELECT COUNT(*) AS n FROM moderation_log WHERE moderator_id = ?`)
+    .bind(id)
+    .first<{ n: number }>();
+  if ((modLogRow?.n ?? 0) > 0) {
+    return c.json(
+      { error: "This account has moderation actions on record and can't be deleted — the audit trail must be preserved. Freeze it instead." },
+      409
+    );
+  }
+
+  const deleteContent = c.req.query("deleteContent") === "true";
+
+  const outageCountRow = await c.env.DB.prepare(`SELECT COUNT(*) AS n FROM outages WHERE author_id = ?`)
+    .bind(id)
+    .first<{ n: number }>();
+  const commentCountRow = await c.env.DB.prepare(`SELECT COUNT(*) AS n FROM comments WHERE author_id = ?`)
+    .bind(id)
+    .first<{ n: number }>();
+  const outageCount = outageCountRow?.n ?? 0;
+  const commentCount = commentCountRow?.n ?? 0;
+
+  if ((outageCount > 0 || commentCount > 0) && !deleteContent) {
+    return c.json(
+      {
+        error: `This account has ${outageCount} submission(s) and ${commentCount} comment(s). Delete their content too, or freeze the account instead.`,
+        outageCount,
+        commentCount,
+      },
+      409
+    );
+  }
+
+  // Collect R2 keys before the cascade deletes the artifacts rows — D1
+  // deletion never touches R2 storage, so this is the only chance to know
+  // what to clean up.
+  let r2Keys: string[] = [];
+  if (deleteContent && outageCount > 0) {
+    const { results } = await c.env.DB.prepare(
+      `SELECT a.r2_key FROM artifacts a JOIN outages o ON o.id = a.outage_id WHERE o.author_id = ?`
+    )
+      .bind(id)
+      .all<{ r2_key: string }>();
+    r2Keys = results.map((r) => r.r2_key);
+  }
+
+  const statements = [];
+  if (deleteContent) {
+    statements.push(c.env.DB.prepare(`DELETE FROM comments WHERE author_id = ?`).bind(id));
+    statements.push(c.env.DB.prepare(`DELETE FROM outages WHERE author_id = ?`).bind(id));
+  }
+  statements.push(c.env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(id));
+  statements.push(
+    c.env.DB.prepare(
+      `INSERT INTO moderation_log (moderator_id, action, target_type, target_id, reason)
+       VALUES (?, 'delete_user', 'user', ?, ?)`
+    ).bind(actor.id, id, deleteContent ? `deleted with ${outageCount} outage(s), ${commentCount} comment(s)` : "deleted, no content")
+  );
+
+  try {
+    await c.env.DB.batch(statements);
+  } catch (err) {
+    console.error("[admin] delete user failed:", err);
+    return c.json({ error: "Couldn't delete this account — it may still have related records." }, 500);
+  }
+
+  // Best-effort — the DB deletion already succeeded and is the source of
+  // truth; an orphaned R2 object is wasted storage, not a correctness bug.
+  for (const key of r2Keys) {
+    await c.env.ARTIFACTS.delete(key).catch((err) => console.error(`[admin] failed to delete R2 object ${key}:`, err));
+  }
+
+  return c.json({ ok: true, deletedOutages: outageCount, deletedComments: commentCount });
+});
+
 export default admin;

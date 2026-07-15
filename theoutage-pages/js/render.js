@@ -37,7 +37,8 @@ export function formatDate(iso) {
 }
 
 export function severityBadge(severity) {
-  return `<span class="badge badge-severity-${escapeHtml(severity)}">${escapeHtml(severity)}</span>`;
+  const slug = String(severity).split(" ")[0];
+  return `<span class="badge badge-severity-${escapeHtml(slug)}">${escapeHtml(severity)}</span>`;
 }
 
 export function statusBadge(status) {

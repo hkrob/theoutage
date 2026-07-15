@@ -33,7 +33,7 @@ export interface Variables {
 export type AppEnv = { Bindings: Env; Variables: Variables };
 
 export type OutageStatus = "draft" | "pending_review" | "published" | "rejected";
-export type Severity = "P3" | "P2" | "P1";
+export type Severity = "P3 Low" | "P2 Medium" | "P1 High";
 
 export interface Outage {
   id: number;

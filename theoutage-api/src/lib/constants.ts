@@ -15,7 +15,7 @@ export const CATEGORIES = [
   "other",
 ] as const;
 
-export const SEVERITIES = ["P3", "P2", "P1"] as const;
+export const SEVERITIES = ["P3 Low", "P2 Medium", "P1 High"] as const;
 
 export const MAX_ARTIFACT_BYTES = 10 * 1024 * 1024; // 10MB/file
 export const MAX_OUTAGE_ARTIFACT_TOTAL_BYTES = 50 * 1024 * 1024; // 50MB/outage

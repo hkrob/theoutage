@@ -98,6 +98,7 @@ export const api = {
 
   // ---- admin ----
   listUsers: (params) => apiFetch(`/admin/users${qs(params)}`),
+  createUser: (payload) => apiFetch("/admin/users", { method: "POST", body: payload }),
   setUserRole: (id, role) => apiFetch(`/admin/users/${id}/role`, { method: "PATCH", body: { role } }),
   freezeUser: (id) => apiFetch(`/admin/users/${id}/freeze`, { method: "POST" }),
   unfreezeUser: (id) => apiFetch(`/admin/users/${id}/unfreeze`, { method: "POST" }),

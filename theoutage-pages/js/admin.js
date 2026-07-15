@@ -5,6 +5,9 @@ import { escapeHtml, formatDate, alertHtml, emptyState } from "./render.js";
 const alertArea = document.getElementById("admin-alert-area");
 const area = document.getElementById("admin-users-area");
 const searchInput = document.getElementById("user-search");
+const showCreateUserBtn = document.getElementById("show-create-user-btn");
+const cancelCreateUserBtn = document.getElementById("cancel-create-user-btn");
+const createUserForm = document.getElementById("create-user-form");
 
 let currentUser = null;
 let searchDebounce = null;
@@ -150,6 +153,41 @@ function wireRowEvents() {
 searchInput.addEventListener("input", () => {
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => load(searchInput.value.trim()), 300);
+});
+
+showCreateUserBtn.addEventListener("click", () => {
+  createUserForm.style.display = "block";
+  showCreateUserBtn.style.display = "none";
+  document.getElementById("new-user-email").focus();
+});
+
+cancelCreateUserBtn.addEventListener("click", () => {
+  createUserForm.reset();
+  createUserForm.style.display = "none";
+  showCreateUserBtn.style.display = "";
+});
+
+createUserForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("new-user-email").value.trim();
+  const display_name = document.getElementById("new-user-display-name").value.trim();
+  const role = document.getElementById("new-user-role").value;
+  if (!email) return;
+
+  const btn = createUserForm.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    await api.createUser({ email, display_name: display_name || undefined, role });
+    showAlert("success", `Account created. A sign-in link was emailed to ${email}.`);
+    createUserForm.reset();
+    createUserForm.style.display = "none";
+    showCreateUserBtn.style.display = "";
+    await load(searchInput.value.trim());
+  } catch (err) {
+    showAlert("error", err instanceof ApiError ? err.message : "Couldn't create the account.");
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 async function init() {

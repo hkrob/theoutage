@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv, User } from "../types";
 import { requireAuth, requireRole } from "../middleware/auth";
+import { randomToken } from "../lib/crypto";
+import { sendAccountCreatedEmail } from "../lib/email";
 
 const admin = new Hono<AppEnv>();
 
@@ -9,6 +11,67 @@ const admin = new Hono<AppEnv>();
 admin.use("*", requireAuth, requireRole("admin"));
 
 const SAFE_USER_COLUMNS = "id, email, email_verified, display_name, created_at, role, frozen";
+
+// ------------------------------------------------------------------
+// POST /api/admin/users  { email, display_name?, role? }
+// Creates an account directly and emails the new user a sign-in link
+// (same magic-link mechanism as self-serve signup) — no password is set
+// or transmitted. email_verified stays 0 until they actually click it.
+// ------------------------------------------------------------------
+const createUserSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  display_name: z.string().trim().min(1).max(100).optional(),
+  role: z.enum(["user", "moderator", "admin"]).optional(),
+});
+
+admin.post("/users", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = createUserSchema.safeParse(body);
+  if (!parsed.success) return c.json({ error: "A valid email is required" }, 400);
+
+  const { email, role = "user" } = parsed.data;
+  const displayName = parsed.data.display_name || email.split("@")[0];
+
+  const existing = await c.env.DB.prepare(`SELECT id FROM users WHERE email = ?`).bind(email).first();
+  if (existing) return c.json({ error: "An account with that email already exists" }, 409);
+
+  const actor = c.get("user")!;
+
+  const user = await c.env.DB.prepare(
+    `INSERT INTO users (email, display_name, role) VALUES (?, ?, ?) RETURNING *`
+  )
+    .bind(email, displayName, role)
+    .first<User>();
+
+  await c.env.DB.prepare(
+    `INSERT INTO moderation_log (moderator_id, action, target_type, target_id, reason)
+     VALUES (?, 'create_user', 'user', ?, ?)`
+  )
+    .bind(actor.id, user!.id, role)
+    .run();
+
+  const tokenId = randomToken(32);
+  const ttlMin = parseInt(c.env.MAGIC_LINK_TTL_MIN, 10) || 15;
+  const expiresAt = new Date(Date.now() + ttlMin * 60 * 1000).toISOString();
+
+  await c.env.DB.prepare(
+    `INSERT INTO auth_tokens (id, user_id, purpose, expires_at) VALUES (?, ?, 'magic_link', ?)`
+  )
+    .bind(tokenId, user!.id, expiresAt)
+    .run();
+
+  const link = `${c.env.APP_ORIGIN}/api/auth/verify?token=${tokenId}`;
+  try {
+    await sendAccountCreatedEmail(c.env, email, link);
+  } catch (err) {
+    // Account is created either way — they just didn't get the email yet
+    // and can request a fresh sign-in link from the login page.
+    console.error("[admin] sendAccountCreatedEmail failed:", err);
+  }
+
+  const { password_hash, ...safe } = user!;
+  return c.json({ user: safe }, 201);
+});
 
 // ------------------------------------------------------------------
 // GET /api/admin/users?q=&page=&pageSize=

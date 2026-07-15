@@ -38,6 +38,15 @@ export async function sendMagicLinkEmail(env: Env, to: string, link: string): Pr
   });
 }
 
+export async function sendAccountCreatedEmail(env: Env, to: string, link: string): Promise<void> {
+  await send(env, {
+    to,
+    subject: "An account was created for you on TheOutage",
+    html: `<p>An administrator created an account for you on TheOutage. Click below to sign in.</p><p><a href="${link}">${link}</a></p><p>This link expires in ${env.MAGIC_LINK_TTL_MIN} minutes and can only be used once — you can request a new sign-in link from the login page any time after that.</p>`,
+    text: `An administrator created an account for you on TheOutage. Sign in here: ${link}\n(expires in ${env.MAGIC_LINK_TTL_MIN} minutes, single use — request a new link from the login page any time after that)`,
+  });
+}
+
 export async function sendPasswordResetEmail(env: Env, to: string, link: string): Promise<void> {
   await send(env, {
     to,

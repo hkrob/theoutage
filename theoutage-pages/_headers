@@ -3,3 +3,12 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=()
+
+# No hashed/versioned filenames here, so let Pages' default long max-age
+# on static assets cause stale JS/CSS after a deploy (browsers would sit on
+# a 4h-old cached copy). Always revalidate instead — ETag-based 304s keep
+# it cheap, but a real change is picked up on the very next request.
+/js/*
+  Cache-Control: no-cache
+/css/*
+  Cache-Control: no-cache

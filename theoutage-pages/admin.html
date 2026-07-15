@@ -21,9 +21,37 @@
         <h1 class="page-title">Admin</h1>
         <p class="page-subtitle">Manage user accounts and access.</p>
       </div>
+      <button class="btn btn-primary btn-sm" id="show-create-user-btn" type="button">Create user</button>
     </div>
 
     <div id="admin-alert-area"></div>
+
+    <form id="create-user-form" class="detail-panel" style="display:none; margin-bottom: var(--space-5);">
+      <h2 class="section-title">Create user</h2>
+      <div style="display:flex; gap: var(--space-4); flex-wrap:wrap;">
+        <div class="field" style="flex:2; min-width:200px;">
+          <label for="new-user-email">Email</label>
+          <input type="email" id="new-user-email" required />
+        </div>
+        <div class="field" style="flex:2; min-width:200px;">
+          <label for="new-user-display-name">Display name</label>
+          <input type="text" id="new-user-display-name" placeholder="Defaults to the part before @" />
+        </div>
+        <div class="field" style="flex:1; min-width:140px;">
+          <label for="new-user-role">Access level</label>
+          <select id="new-user-role">
+            <option value="user" selected>user</option>
+            <option value="moderator">moderator</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-hint">No password is set — they'll get a sign-in link by email, same as signing up themselves.</div>
+      <div style="display:flex; gap: var(--space-2); margin-top: var(--space-3);">
+        <button class="btn btn-sm btn-primary" type="submit">Create</button>
+        <button class="btn btn-sm" id="cancel-create-user-btn" type="button">Cancel</button>
+      </div>
+    </form>
 
     <div class="field" style="max-width: 360px;">
       <label for="user-search">Search users</label>

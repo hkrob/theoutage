@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Submit an outage — TheOutage</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href="/"><span class="brand-dot"></span> TheOutage</a>
+    <div class="nav-links" id="nav-auth-area"></div>
+  </div>
+</nav>
+
+<main class="page">
+  <div class="container" style="max-width: 640px;">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="form-title">Submit an outage</h1>
+        <p class="page-subtitle">Save as a draft any time, or submit straight for review.</p>
+      </div>
+    </div>
+
+    <div id="alert-area"></div>
+
+    <form class="form-card" id="outage-form">
+      <div class="field">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" required maxlength="300" placeholder="e.g. Regional power grid failure — Northeast US" />
+      </div>
+
+      <div class="field">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" required maxlength="20000" placeholder="What happened, scope, impact, any known cause…"></textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="category">Category</label>
+          <select id="category" name="category" required></select>
+        </div>
+        <div class="field">
+          <label for="severity">Severity</label>
+          <select id="severity" name="severity" required></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="tags">Tags <span class="text-muted">(optional, comma-separated)</span></label>
+        <input type="text" id="tags" name="tags" maxlength="500" placeholder="transformer, heatwave" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="country">Country</label>
+          <select id="country" name="country" required></select>
+        </div>
+        <div class="field">
+          <label for="city">City <span class="text-muted">(optional)</span></label>
+          <input type="text" id="city" name="city" maxlength="200" />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="start_time">Started</label>
+          <input type="datetime-local" id="start_time" name="start_time" required />
+        </div>
+        <div class="field">
+          <label for="end_time">Ended</label>
+          <input type="datetime-local" id="end_time" name="end_time" />
+          <label style="display:flex; align-items:center; gap:6px; margin-top:6px; font-weight:400;">
+            <input type="checkbox" id="ongoing" style="width:auto;" />
+            Still ongoing / unknown
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="source_url">Source link <span class="text-muted">(optional)</span></label>
+        <input type="url" id="source_url" name="source_url" maxlength="2000" placeholder="https://…" />
+      </div>
+
+      <div class="form-actions" id="form-buttons"></div>
+    </form>
+  </div>
+</main>
+
+<footer>TheOutage — a public record of major outages.</footer>
+
+<script type="module" src="/js/submit.js"></script>
+</body>
+</html>

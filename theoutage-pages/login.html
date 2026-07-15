@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log in — TheOutage</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href="/"><span class="brand-dot"></span> TheOutage</a>
+    <div class="nav-links" id="nav-auth-area"></div>
+  </div>
+</nav>
+
+<main class="page">
+  <div class="container" style="max-width: 420px;">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Log in</h1>
+        <p class="page-subtitle">Magic link is the default — no password required.</p>
+      </div>
+    </div>
+
+    <div id="alert-area"></div>
+
+    <div class="form-card">
+      <form id="magic-link-form">
+        <div class="field">
+          <label for="ml-email">Email address</label>
+          <input type="email" id="ml-email" name="email" required autocomplete="email" placeholder="you@example.com" />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">Send magic link</button>
+        </div>
+      </form>
+    </div>
+
+    <div style="text-align:center; margin: var(--space-5) 0; color: var(--text-muted); font-size: var(--text-sm);">
+      — or —
+    </div>
+
+    <div class="form-card">
+      <form id="password-login-form">
+        <div class="field">
+          <label for="pw-email">Email address</label>
+          <input type="email" id="pw-email" name="email" required autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="pw-password">Password</label>
+          <input type="password" id="pw-password" name="password" required autocomplete="current-password" />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-block">Log in with password</button>
+        </div>
+      </form>
+      <p style="margin-top: var(--space-3);">
+        <a href="#" id="forgot-link" class="text-secondary">Forgot your password, or never set one?</a>
+      </p>
+      <form id="reset-request-form" style="display:none; margin-top: var(--space-3);">
+        <div class="field">
+          <label for="reset-email">Email address</label>
+          <input type="email" id="reset-email" name="email" required autocomplete="email" />
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-block">Send password reset link</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<footer>TheOutage — a public record of major outages.</footer>
+
+<script type="module" src="/js/login.js"></script>
+</body>
+</html>

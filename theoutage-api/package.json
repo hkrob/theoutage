@@ -1,0 +1,22 @@
+{
+  "name": "theoutage-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply theoutage-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply theoutage-db --remote",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.6.14",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250709.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.90.0"
+  }
+}

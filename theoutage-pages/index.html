@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TheOutage — a public record of major outages</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href="/"><span class="brand-dot"></span> TheOutage</a>
+    <div class="nav-links" id="nav-auth-area"></div>
+  </div>
+</nav>
+
+<main class="page">
+  <div class="container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="feed-title">Recent outages</h1>
+        <p class="page-subtitle">Power, internet, cloud, and infrastructure incidents — as reported by the community.</p>
+      </div>
+    </div>
+
+    <form class="filters" id="filters-form">
+      <div class="field">
+        <label for="f-q">Search</label>
+        <input type="search" id="f-q" name="q" placeholder="title or description…" />
+      </div>
+      <div class="field">
+        <label for="f-category">Category</label>
+        <select id="f-category" name="category">
+          <option value="">Any</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-severity">Severity</label>
+        <select id="f-severity" name="severity">
+          <option value="">Any</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-country">Country</label>
+        <select id="f-country" name="country">
+          <option value="">Any</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-date-from">From</label>
+        <input type="date" id="f-date-from" name="date_from" />
+      </div>
+      <div class="field">
+        <label for="f-date-to">To</label>
+        <input type="date" id="f-date-to" name="date_to" />
+      </div>
+      <div class="field" id="pending-toggle-field" style="display:none; align-self:flex-end;">
+        <label style="display:flex; align-items:center; gap:6px; margin-bottom:0;">
+          <input type="checkbox" id="f-pending" name="pending" style="width:auto;" />
+          Pending review only
+        </label>
+      </div>
+      <div class="field" style="align-self:flex-end; flex:0;">
+        <button type="submit" class="btn btn-primary">Filter</button>
+      </div>
+    </form>
+
+    <div id="feed-area">
+      <div class="spinner-text">Loading…</div>
+    </div>
+
+    <div class="pagination" id="pagination"></div>
+  </div>
+</main>
+
+<footer>TheOutage — a public record of major outages.</footer>
+
+<script type="module" src="/js/feed.js"></script>
+</body>
+</html>

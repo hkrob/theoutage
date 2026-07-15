@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local `wrangler dev` — never commit the real file.
+SESSION_HMAC_SECRET=replace-with-a-64-char-random-hex-string
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+RESEND_FROM_EMAIL=noreply@TheOutage.robcloud.qzz.io

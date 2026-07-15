@@ -1,0 +1,54 @@
+name = "theoutage-api"
+main = "src/index.ts"
+compatibility_date = "2026-07-15"
+compatibility_flags = ["nodejs_compat"]
+
+# Deployment assumption: this Worker is bound to a route on the SAME zone/host
+# as the Pages frontend. That keeps API calls same-site, so the session
+# cookie (SameSite=Lax) works without CORS. If you instead deploy the API on
+# a separate subdomain, remove this routes block, add CORS middleware, and
+# switch the cookie to SameSite=None; Secure.
+#
+# zone_name must match the zone as it appears in your Cloudflare dashboard —
+# confirm it's exactly "robcloud.qzz.io" (not e.g. "qzz.io") before deploying.
+[[routes]]
+pattern = "TheOutage.robcloud.qzz.io/api/*"
+zone_name = "robcloud.qzz.io"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "theoutage-db"
+database_id = "e93c0b69-dd6b-4d51-a2e4-699c5ea460b8"
+migrations_dir = "migrations"
+
+# R2 bucket for artifacts — created and live (theoutage-artifacts).
+[[r2_buckets]]
+binding = "ARTIFACTS"
+bucket_name = "theoutage-artifacts"
+
+[vars]
+# Base URL of the deployed app — used to build magic-link / reset-link URLs
+# and the post-auth redirect target. Never hardcode the hostname elsewhere.
+APP_ORIGIN = "https://TheOutage.robcloud.qzz.io"
+
+SESSION_COOKIE_NAME = "the_outage_session"
+SESSION_TTL_DAYS = "30"
+MAGIC_LINK_TTL_MIN = "15"
+RATE_LIMIT_MAGIC_LINK_PER_HOUR = "3"
+
+# PBKDF2 iteration count for password hashing. Benchmarked at ~0.43ms/1k
+# iterations (see src/lib/crypto.ts) — 100k costs ~43ms of CPU, which alone
+# exceeds the Workers Free plan's 10ms/request budget. This means the three
+# password-touching routes (POST /login, /set-password, /password-reset/confirm)
+# will likely hit Cloudflare error 1102 on Free plan and need Workers Paid
+# ($5/mo) to run reliably — magic-link auth (the default, spec-preferred
+# path) and every other route are unaffected and stay well within Free tier.
+# Consider this default a "Paid plan" setting; if staying on Free plan,
+# either lower this (still no iteration count here has real headroom) or
+# disable the password login path and keep magic-link-only until upgrading.
+PBKDF2_ITERATIONS = "100000"
+
+# Secrets — set these with `wrangler secret put <NAME>`, do not commit values:
+#   SESSION_HMAC_SECRET   64+ char random hex string, signs the session cookie
+#   RESEND_API_KEY        Resend API key
+#   RESEND_FROM_EMAIL     verified Resend sender address, e.g. noreply@TheOutage.robcloud.qzz.io

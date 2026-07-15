@@ -10,5 +10,7 @@
 # it cheap, but a real change is picked up on the very next request.
 /js/*
   Cache-Control: no-cache
+  X-Cache-Rule-Test: js-rule-applied
 /css/*
   Cache-Control: no-cache
+  X-Cache-Rule-Test: css-rule-applied

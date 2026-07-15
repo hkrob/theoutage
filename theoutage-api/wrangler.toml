@@ -3,17 +3,24 @@ main = "src/index.ts"
 compatibility_date = "2026-07-15"
 compatibility_flags = ["nodejs_compat"]
 
-# Deployment assumption: this Worker is bound to a route on the SAME zone/host
-# as the Pages frontend. That keeps API calls same-site, so the session
-# cookie (SameSite=Lax) works without CORS. If you instead deploy the API on
-# a separate subdomain, remove this routes block, add CORS middleware, and
-# switch the cookie to SameSite=None; Secure.
-#
-# zone_name must match the zone as it appears in your Cloudflare dashboard —
-# confirm it's exactly "robcloud.qzz.io" (not e.g. "qzz.io") before deploying.
+# The Worker handles the full hostname so that:
+#   - Static assets (HTML/CSS/JS) are served by the [assets] binding below
+#   - /api/* routes are handled by the Worker's Hono app
+# This collapses the previous Pages-site + separate Worker-route into a single
+# deployment, avoiding the route-registration race condition that caused Pages
+# to intercept /api/* traffic when the route wasn't registered yet.
+# SameSite=Lax on the session cookie is fine because API and static content
+# are served from the same origin.
 [[routes]]
-pattern = "TheOutage.robcloud.qzz.io/api/*"
+pattern = "TheOutage.robcloud.qzz.io/*"
 zone_name = "robcloud.qzz.io"
+
+# Static-asset binding: Workers serves the Pages frontend files for every
+# request path that doesn't match a Worker handler. Requests for /api/* fall
+# through to Hono because there are no matching asset files at those paths.
+# The directory path is relative to this wrangler.toml file.
+[assets]
+directory = "../theoutage-pages"
 
 [[d1_databases]]
 binding = "DB"

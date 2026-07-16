@@ -13,15 +13,21 @@ interface QuoteResult {
 
 interface FinnhubQuote {
   c: number; // current price
-  d: number; // change
-  dp: number; // percent change
+  d: number | null; // change — null (not 0) for a symbol Finnhub has never heard of
+  dp: number | null; // percent change — same null-vs-0 distinction as d
 }
 
 // Finnhub's free tier only covers US-listed exchanges — a 403 ("no access")
-// or the zeroed-out "unknown symbol" response both mean "try the next
-// provider," not "something's broken," so this returns null rather than
-// throwing for either case. A thrown error means a genuine transient
-// problem (network, unexpected shape) worth logging.
+// or an unrecognized-symbol response both mean "try the next provider," not
+// "something's broken," so this returns null rather than throwing for
+// either case. A thrown error means a genuine transient problem (network,
+// unexpected shape) worth logging.
+//
+// Finnhub's "no data" shape isn't consistent: a symbol it's genuinely never
+// heard of returns c:0 with d/dp as `null`; other no-access cases can come
+// back all-zero. Require real finite numbers for all three fields, not just
+// a zero-check, or nulls silently reach the DB write below (whose columns
+// are NOT NULL) and throw an uncaught exception past this function's catch.
 async function fetchFromFinnhub(code: string, apiKey: string): Promise<QuoteResult | null> {
   const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(code)}&token=${apiKey}`);
   if (!res.ok) {
@@ -29,8 +35,8 @@ async function fetchFromFinnhub(code: string, apiKey: string): Promise<QuoteResu
     return null;
   }
   const data = (await res.json()) as FinnhubQuote;
-  if (data.c === 0 && data.d === 0 && data.dp === 0) return null; // unknown symbol
-  return { price: data.c, change: data.d, percentChange: data.dp };
+  if (!data.c || !Number.isFinite(data.d) || !Number.isFinite(data.dp)) return null;
+  return { price: data.c, change: data.d as number, percentChange: data.dp as number };
 }
 
 interface TwelveDataQuote {
@@ -101,7 +107,15 @@ stockQuote.get("/:code", async (c) => {
     return c.json({ error: "Couldn't fetch a price right now." }, 503);
   }
 
-  if (!result) {
+  // Belt-and-braces: whichever provider answered, refuse to cache/return
+  // anything that isn't three real finite numbers — the cache columns are
+  // NOT NULL, so a stray null/NaN here would otherwise throw uncaught.
+  if (
+    !result ||
+    !Number.isFinite(result.price) ||
+    !Number.isFinite(result.change) ||
+    !Number.isFinite(result.percentChange)
+  ) {
     if (cached) return c.json({ quote: cached, stale: true });
     return c.json({ error: "Unknown ticker" }, 404);
   }

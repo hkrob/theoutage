@@ -11,9 +11,9 @@ export const getComments: Handler<AppEnv> = async (c) => {
   const outageId = parseInt(c.req.param("id") ?? "", 10);
   if (!outageId) return c.json({ error: "Invalid outage id" }, 400);
 
-  const outage = await c.env.DB.prepare(`SELECT id, author_id, status FROM outages WHERE id = ?`)
+  const outage = await c.env.DB.prepare(`SELECT id, author_id, status, hidden FROM outages WHERE id = ?`)
     .bind(outageId)
-    .first<Pick<Outage, "id" | "author_id" | "status">>();
+    .first<Pick<Outage, "id" | "author_id" | "status" | "hidden">>();
 
   if (!outage || !canViewOutage(c.get("user"), outage)) {
     return c.json({ error: "Not found" }, 404);
@@ -55,12 +55,12 @@ export const createComment: Handler<AppEnv> = async (c) => {
   const outageId = parseInt(c.req.param("id") ?? "", 10);
   if (!outageId) return c.json({ error: "Invalid outage id" }, 400);
 
-  const outage = await c.env.DB.prepare(`SELECT id, status FROM outages WHERE id = ?`)
+  const outage = await c.env.DB.prepare(`SELECT id, status, hidden FROM outages WHERE id = ?`)
     .bind(outageId)
-    .first<Pick<Outage, "id" | "status">>();
+    .first<Pick<Outage, "id" | "status" | "hidden">>();
 
   if (!outage) return c.json({ error: "Not found" }, 404);
-  if (outage.status !== "published") {
+  if (outage.status !== "published" || outage.hidden) {
     return c.json({ error: "Comments are only open on published outages" }, 400);
   }
 

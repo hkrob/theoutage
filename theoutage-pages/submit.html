@@ -19,7 +19,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title" id="form-title">Submit an outage</h1>
-        <p class="page-subtitle">Save as a draft any time, or submit straight for review.</p>
+        <p class="page-subtitle" id="form-subtitle">Save as a draft any time, or submit straight for review.</p>
       </div>
     </div>
 
@@ -83,11 +83,11 @@
       <div class="field-row">
         <div class="field">
           <label for="start_time">Started</label>
-          <input type="datetime-local" id="start_time" name="start_time" required />
+          <input type="date" id="start_time" name="start_time" required />
         </div>
         <div class="field">
           <label for="end_time">Ended</label>
-          <input type="datetime-local" id="end_time" name="end_time" />
+          <input type="date" id="end_time" name="end_time" />
           <label style="display:flex; align-items:center; gap:6px; margin-top:6px; font-weight:400;">
             <input type="checkbox" id="ongoing" style="width:auto;" />
             Still ongoing / unknown

@@ -71,6 +71,8 @@ export const api = {
   createOutage: (payload) => apiFetch("/outages", { method: "POST", body: payload }),
   updateOutage: (id, payload) => apiFetch(`/outages/${id}`, { method: "PATCH", body: payload }),
   deleteOutage: (id) => apiFetch(`/outages/${id}`, { method: "DELETE" }),
+  hideOutage: (id) => apiFetch(`/outages/${id}/hide`, { method: "POST" }),
+  unhideOutage: (id) => apiFetch(`/outages/${id}/unhide`, { method: "POST" }),
   getStockQuote: (code) => apiFetch(`/stock-quote/${encodeURIComponent(code)}`),
 
   // ---- artifacts ----
@@ -107,4 +109,5 @@ export const api = {
   resetUserAccess: (id) => apiFetch(`/admin/users/${id}/reset-access`, { method: "POST" }),
   deleteUser: (id, deleteContent) =>
     apiFetch(`/admin/users/${id}${deleteContent ? "?deleteContent=true" : ""}`, { method: "DELETE" }),
+  getHealth: () => apiFetch("/admin/health"),
 };

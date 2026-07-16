@@ -19,7 +19,7 @@ export async function initNav() {
           <a href="/guide.html">Guide</a>
           <a href="/submit.html">Submit outage</a>
           <a href="/dashboard.html">My submissions</a>
-          ${user.role === "admin" ? `<a href="/admin.html">Admin</a>` : ""}
+          ${user.role === "admin" ? `<a href="/admin.html">Admin</a> <a href="/health.html">Service Health</a>` : ""}
           <span class="text-secondary">${escapeText(user.display_name)}</span>
           <button class="btn btn-sm" id="logout-btn" type="button">Log out</button>
         `;

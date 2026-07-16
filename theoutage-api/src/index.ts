@@ -7,6 +7,7 @@ import { artifactById } from "./routes/artifacts";
 import moderationRoutes from "./routes/moderation";
 import adminRoutes from "./routes/admin";
 import stockQuoteRoutes from "./routes/stockQuote";
+import healthRoutes from "./routes/health";
 
 const app = new Hono<AppEnv>();
 
@@ -20,5 +21,6 @@ app.route("/api/artifacts", artifactById);
 app.route("/api/moderation", moderationRoutes);
 app.route("/api/admin", adminRoutes);
 app.route("/api/stock-quote", stockQuoteRoutes);
+app.route("/api/admin/health", healthRoutes);
 
 export default app;

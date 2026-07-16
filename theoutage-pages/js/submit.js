@@ -1,5 +1,5 @@
 import { api, ApiError } from "./api.js";
-import { requireUser } from "./nav.js";
+import { requireUser, isModerator } from "./nav.js";
 import { CATEGORIES, SEVERITIES, COUNTRIES, CURRENT_STATUSES } from "./constants.js";
 import { alertHtml } from "./render.js";
 
@@ -7,6 +7,7 @@ const outageId = new URLSearchParams(window.location.search).get("id");
 const form = document.getElementById("outage-form");
 const alertArea = document.getElementById("alert-area");
 const formTitle = document.getElementById("form-title");
+const formSubtitle = document.getElementById("form-subtitle");
 const formButtons = document.getElementById("form-buttons");
 
 function showAlert(kind, message) {
@@ -38,18 +39,6 @@ populateSelect("country", COUNTRIES);
 populateSelect("current_status", CURRENT_STATUSES);
 document.getElementById("current_status").value = "investigating";
 
-function toDatetimeLocalValue(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function fromDatetimeLocalValue(value) {
-  if (!value) return null;
-  return new Date(value).toISOString();
-}
-
 function readForm() {
   const endOngoing = document.getElementById("ongoing").checked;
   return {
@@ -63,8 +52,8 @@ function readForm() {
     tags: document.getElementById("tags").value.trim() || undefined,
     country: document.getElementById("country").value,
     city: document.getElementById("city").value.trim() || undefined,
-    start_time: fromDatetimeLocalValue(document.getElementById("start_time").value),
-    end_time: endOngoing ? null : fromDatetimeLocalValue(document.getElementById("end_time").value),
+    start_time: document.getElementById("start_time").value || null,
+    end_time: endOngoing ? null : document.getElementById("end_time").value || null,
     source_url: document.getElementById("source_url").value.trim() || undefined,
   };
 }
@@ -80,9 +69,9 @@ function fillForm(outage) {
   document.getElementById("tags").value = outage.tags || "";
   document.getElementById("country").value = outage.country;
   document.getElementById("city").value = outage.city || "";
-  document.getElementById("start_time").value = toDatetimeLocalValue(outage.start_time);
+  document.getElementById("start_time").value = outage.start_time || "";
   if (outage.end_time) {
-    document.getElementById("end_time").value = toDatetimeLocalValue(outage.end_time);
+    document.getElementById("end_time").value = outage.end_time;
   } else {
     document.getElementById("ongoing").checked = true;
     document.getElementById("end_time").disabled = true;
@@ -109,7 +98,7 @@ async function submitAs(action) {
   return api.createOutage({ ...payload, action: action === "submit" ? "submit" : "draft" });
 }
 
-function renderButtons(mode, status) {
+function renderButtons(mode, status, canSelfApprove) {
   formButtons.innerHTML = "";
 
   if (mode === "create" || status === "draft" || status === "rejected") {
@@ -119,7 +108,7 @@ function renderButtons(mode, status) {
     `;
   } else {
     formButtons.innerHTML = `<button type="button" class="btn btn-primary" id="save-changes-btn">Save changes</button>`;
-    if (status === "published") {
+    if (status === "published" && !canSelfApprove) {
       formButtons.insertAdjacentHTML(
         "beforeend",
         `<span class="text-muted" style="align-self:center; font-size: var(--text-sm);">Saving sends this back for re-review.</span>`
@@ -162,7 +151,10 @@ async function init() {
         return;
       }
       fillForm(outage);
-      renderButtons("edit", outage.status);
+      renderButtons("edit", outage.status, isModerator(user));
+      if (outage.outage_number) {
+        formSubtitle.textContent = `Reference #${outage.outage_number}`;
+      }
     } catch (err) {
       showAlert("error", err instanceof ApiError ? err.message : "Couldn't load this outage.");
       form.style.display = "none";

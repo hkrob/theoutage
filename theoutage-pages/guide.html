@@ -38,13 +38,17 @@
         <li><strong>Rejected</strong> — a moderator sent it back with a reason (shown on the outage page). Edit and resubmit any time.</li>
       </ul>
       <p><strong>Editing a published outage always sends it back to "pending review"</strong> — any change, however small, gets a fresh moderation pass before it's public again. This keeps the public record trustworthy: nothing changes on the live feed without a moderator seeing it first.</p>
-      <p>Once an outage has ever been submitted for review, it can't be deleted outright (it's part of the historical record) — only unsubmitted drafts can be removed completely.</p>
+      <p><strong>Exception:</strong> when a moderator or admin submits or edits their <em>own</em> outage, it publishes immediately — no separate approval step, since they're already trusted to make that call.</p>
+      <p>Once an outage has ever been submitted for review, it can't be deleted outright (it's part of the historical record) — only unsubmitted drafts can be removed completely. Admins can delete or hide any outage regardless of status; see Roles below.</p>
     </div>
 
     <div class="detail-panel">
       <h2 class="section-title">Fields, and why they're there</h2>
 
-      <div class="detail-meta-label" style="margin-top: 0;">Title</div>
+      <div class="detail-meta-label" style="margin-top: 0;">Reference number</div>
+      <p class="text-secondary">A unique number assigned automatically when you submit — the date plus a 4-digit counter for that day (e.g. <code>202607160001</code> is the first outage numbered on 16 July 2026). It's a stable way to refer to a specific record; shown next to the badges on the outage page and in your submissions list.</p>
+
+      <div class="detail-meta-label">Title</div>
       <p class="text-secondary">A short, specific headline — what happened and roughly where. This is what shows up in search results and the feed.</p>
 
       <div class="detail-meta-label">Entity</div>
@@ -72,7 +76,7 @@
       <p class="text-secondary">Where the outage happened. Country is a fixed list for consistent filtering; city is free text and optional since not every outage is city-scoped.</p>
 
       <div class="detail-meta-label">Started / Ended</div>
-      <p class="text-secondary">When the incident began, and when it ended — leave "Ended" blank and check "still ongoing" if it hasn't resolved yet, or you simply don't know.</p>
+      <p class="text-secondary">The date the incident began, and the date it ended — date only, no time of day, since that level of precision usually isn't reliably known anyway. Leave "Ended" blank and check "still ongoing" if it hasn't resolved yet, or you simply don't know. The outage page shows a <strong>Duration</strong> between the two (or "Ongoing" with no end date) — this is calculated automatically, not a separate field to fill in.</p>
 
       <div class="detail-meta-label">Source link <span class="text-muted">(optional)</span></div>
       <p class="text-secondary">A link backing up the report — a news article, an official status page, a company statement.</p>
@@ -84,9 +88,15 @@
     <div class="detail-panel">
       <h2 class="section-title">Roles</h2>
       <ul style="margin: var(--space-3) 0; padding-left: 1.4em; color: var(--text-secondary);">
-        <li><strong>User</strong> — the default. Submit outages, comment on published ones, edit/delete your own drafts.</li>
+        <li><strong>User</strong> — the default. Submit outages, comment on published ones, edit/delete your own drafts. Submissions publish immediately when the author is a moderator or admin — see the workflow section above.</li>
         <li><strong>Moderator</strong> — everything a user can do, plus approve/reject pending submissions and remove comments.</li>
-        <li><strong>Admin</strong> — everything a moderator can do, plus manage user accounts from the <a href="/admin.html">Admin</a> page: change access level, freeze/unfreeze, reset access, manually verify an email, create accounts directly, delete accounts, and view any user's full submission history.</li>
+        <li><strong>Admin</strong> — everything a moderator can do, plus:
+          <ul style="margin-top: var(--space-2); padding-left: 1.4em;">
+            <li>Manage user accounts from the <a href="/admin.html">Admin</a> page: change access level, freeze/unfreeze, reset access, manually verify an email, create accounts directly, delete accounts, and view any user's full submission history (including drafts).</li>
+            <li>From that same submission-history view: <strong>hide</strong> an outage (pulls it off the public feed without deleting it — the record, comments, and attachments stay intact and it can be unhidden any time) or <strong>delete</strong> it outright (permanent, any status).</li>
+            <li>Check <a href="/health.html">Service Health</a> for a live status view of every service the site depends on (database, file storage, stock price providers, email) — the first stop if something seems broken.</li>
+          </ul>
+        </li>
       </ul>
       <p>Email verification (via the magic-link sign-in email) is required before you can submit an outage or post a comment.</p>
     </div>

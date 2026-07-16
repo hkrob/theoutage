@@ -36,6 +36,17 @@ export function formatDate(iso) {
   }
 }
 
+/** Whole-day duration between two date-only (YYYY-MM-DD) strings. */
+export function formatDuration(startDate, endDate) {
+  if (!endDate) return "Ongoing";
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const days = Math.round((end - start) / 86400000);
+  if (days <= 0) return "Same day";
+  if (days === 1) return "1 day";
+  return `${days} days`;
+}
+
 export function formatBytes(bytes) {
   const n = Number(bytes) || 0;
   if (n < 1024) return `${n} B`;
@@ -91,7 +102,8 @@ export function outageCardHtml(outage) {
         <div class="outage-card-meta">
           <span class="text-secondary">${escapeHtml(outage.entity)}</span>
           <span>${escapeHtml(location)}</span>
-          <span class="mono">${formatDateTime(outage.start_time)}</span>
+          <span class="mono">${formatDate(outage.start_time)}</span>
+          <span class="mono text-muted">#${escapeHtml(outage.outage_number)}</span>
         </div>
         <p class="outage-card-desc">${escapeHtml(outage.description)}</p>
       </div>

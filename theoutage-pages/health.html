@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>My submissions — TheOutage</title>
+<title>Service Health — TheOutage</title>
 <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
@@ -18,22 +18,24 @@
   <div class="container">
     <div class="page-header">
       <div>
-        <h1 class="page-title" id="dashboard-title">My submissions</h1>
-        <p class="page-subtitle" id="dashboard-subtitle">Drafts, pending review, published, and rejected — all in one place.</p>
+        <h1 class="page-title">Service Health</h1>
+        <p class="page-subtitle">Live status of every service this site depends on — the one place to check if something's wrong.</p>
       </div>
-      <a class="btn btn-primary" href="/submit.html" id="new-submission-btn">New submission</a>
+      <button class="btn btn-primary btn-sm" id="refresh-health-btn" type="button">Refresh</button>
     </div>
 
-    <div id="dashboard-alert-area"></div>
+    <div id="health-alert-area"></div>
 
-    <div id="dashboard-area">
-      <div class="spinner-text">Loading…</div>
+    <div id="health-overall"></div>
+
+    <div id="health-checks">
+      <div class="spinner-text">Checking…</div>
     </div>
   </div>
 </main>
 
 <footer>TheOutage — a public record of major outages.</footer>
 
-<script type="module" src="/js/dashboard.js"></script>
+<script type="module" src="/js/health.js"></script>
 </body>
 </html>

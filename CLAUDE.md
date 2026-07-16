@@ -4,8 +4,8 @@ Outage-tracking web app: Cloudflare Pages (static frontend) + Cloudflare Workers
 
 ## Layout
 
-- `theoutage-api/` — Cloudflare Worker (Hono, TypeScript). Routes: `src/routes/{auth,outages,artifacts,comments,moderation,admin}.ts`. Libs: `src/lib/{crypto,session,email,rateLimit,constants,fts,outageAccess}.ts`. Middleware: `src/middleware/auth.ts`.
-- `theoutage-pages/` — static site, no build step. Vanilla HTML/CSS/ES modules. Pages: `index.html` (feed), `outage.html` (detail), `submit.html` (create/edit), `dashboard.html` (my submissions — also used by admins to view any user's submissions via `?author_id=`), `admin.html` (user management, admin-only), `guide.html` (field/workflow explainer, public), `login.html`, `reset-password.html`, `auth-callback.html`.
+- `theoutage-api/` — Cloudflare Worker (Hono, TypeScript). Routes: `src/routes/{auth,outages,artifacts,comments,moderation,admin,stockQuote,health}.ts`. Libs: `src/lib/{crypto,session,email,rateLimit,constants,fts,outageAccess}.ts`. Middleware: `src/middleware/auth.ts`.
+- `theoutage-pages/` — static site, no build step. Vanilla HTML/CSS/ES modules. Pages: `index.html` (feed), `outage.html` (detail), `submit.html` (create/edit), `dashboard.html` (my submissions — also used by admins to view any user's submissions via `?author_id=`, with hide/unhide/delete actions there), `admin.html` (user management, admin-only), `health.html` (live dependency status, admin-only), `guide.html` (field/workflow explainer, public), `login.html`, `reset-password.html`, `auth-callback.html`.
 - `theoutage-api/migrations/0001_init.sql`, `0002_rate_limits.sql` — schema reference copies.
 - `DEPLOYMENT.md` — full runbook (read this first for deploy/ops questions).
 
@@ -17,7 +17,7 @@ Everything is live and all smoke-test flows have been verified end-to-end:
 - Worker `theoutage-api` — deployed via Cloudflare Workers Builds (GitHub-connected, auto-deploys on push to `main`). Route: `TheOutage.robcloud.qzz.io/*` (full host, serves static assets too via `[assets]` binding).
 - Pages project `theoutage` — deployed via Pages Git integration. Has `functions/api/[[path]].js` that proxies `/api/*` to the Worker via `API_WORKER` service binding.
 - Custom domain `TheOutage.robcloud.qzz.io` — attached to the Pages project.
-- Worker secrets (`SESSION_HMAC_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`) — set via dashboard. `RESEND_FROM_EMAIL` is `noreply@theoutage.robcloud.qzz.io` (verified Resend domain).
+- Worker secrets (`SESSION_HMAC_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `FINNHUB_API_KEY`, `TWELVEDATA_API_KEY`) — set via dashboard. `RESEND_FROM_EMAIL` is `noreply@theoutage.robcloud.qzz.io` (verified Resend domain). The two stock-price keys are optional — `GET /api/stock-quote/:code` and the `/health.html` checks both degrade cleanly if either is unset.
 - Resend sender domain `theoutage.robcloud.qzz.io` — verified (DKIM + SPF records in Cloudflare DNS).
 
 **Smoke-test checklist (DEPLOYMENT.md §5) — all passed:** feed loads, magic-link login, draft→submit→approve→feed, image upload/thumbnail, comment, moderator reject + Resend email confirmed.
@@ -29,6 +29,7 @@ Everything is live and all smoke-test flows have been verified end-to-end:
 3. **PBKDF2 CPU cost**: 100k iterations ≈ 43ms measured CPU, which exceeds the Workers **Free** plan's 10ms/request budget. `/login`, `/set-password`, `/password-reset/confirm` may throw Cloudflare error 1102 until upgraded to Workers Paid ($5/mo). Magic-link auth (default path) is unaffected.
 4. **Hono param typing**: `c.req.param("id")` types as `string | undefined` in handlers registered via multi-arg chains — use `c.req.param("id") ?? ""` consistently (already applied throughout).
 5. **Same-origin deployment assumption**: the Worker is mounted on the same zone/host as the Pages site specifically so the session cookie can stay `SameSite=Lax` with no CORS needed. Don't split them onto separate subdomains without adding CORS middleware and switching to `SameSite=None; Secure`.
+6. **Never rebuild the `outages` or `users` tables via `DROP TABLE`/rename for a schema change.** Both have children with `ON DELETE CASCADE` (`artifacts`/`comments` → `outages`; `sessions`/`auth_tokens` → `users`), and D1 ignores `PRAGMA foreign_keys = OFF` over the query API — confirmed twice in production, wiping an outage's artifacts both times. Only use plain `ALTER TABLE ADD COLUMN` for these two tables (a shared `DEFAULT` if `NOT NULL`, nullable + app-enforced if the value must be unique per row, e.g. `outages.outage_number`). Tables with no incoming FK (`moderation_log`, `stock_quote_cache`) are unaffected and safe to rebuild normally when a `CHECK`/enum needs to change.
 
 ## Known gaps (not yet built, only build if asked)
 

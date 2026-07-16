@@ -15,9 +15,9 @@ export const listArtifacts: Handler<AppEnv> = async (c) => {
   const outageId = parseInt(c.req.param("id") ?? "", 10);
   if (!outageId) return c.json({ error: "Invalid outage id" }, 400);
 
-  const outage = await c.env.DB.prepare(`SELECT id, author_id, status FROM outages WHERE id = ?`)
+  const outage = await c.env.DB.prepare(`SELECT id, author_id, status, hidden FROM outages WHERE id = ?`)
     .bind(outageId)
-    .first<Pick<Outage, "id" | "author_id" | "status">>();
+    .first<Pick<Outage, "id" | "author_id" | "status" | "hidden">>();
 
   if (!outage || !canViewOutage(c.get("user"), outage)) {
     return c.json({ error: "Not found" }, 404);
@@ -130,13 +130,15 @@ export const artifactById = new Hono<AppEnv>();
 
 async function loadArtifactWithOutage(c: Context<AppEnv>, artifactId: number) {
   return c.env.DB.prepare(
-    `SELECT a.*, o.author_id AS outage_author_id, o.status AS outage_status
+    `SELECT a.*, o.author_id AS outage_author_id, o.status AS outage_status, o.hidden AS outage_hidden
      FROM artifacts a
      JOIN outages o ON o.id = a.outage_id
      WHERE a.id = ?`
   )
     .bind(artifactId)
-    .first<Artifact & { outage_author_id: number; outage_status: Outage["status"] }>();
+    .first<
+      Artifact & { outage_author_id: number; outage_status: Outage["status"]; outage_hidden: number }
+    >();
 }
 
 // GET /api/artifacts/:artifactId/file — streams the R2 object. Enforces the
@@ -150,7 +152,9 @@ artifactById.get("/:artifactId/file", async (c) => {
   if (!row) return c.json({ error: "Not found" }, 404);
 
   const user = c.get("user");
-  if (!canViewOutage(user, { status: row.outage_status, author_id: row.outage_author_id })) {
+  if (
+    !canViewOutage(user, { status: row.outage_status, author_id: row.outage_author_id, hidden: row.outage_hidden })
+  ) {
     return c.json({ error: "Not found" }, 404);
   }
 

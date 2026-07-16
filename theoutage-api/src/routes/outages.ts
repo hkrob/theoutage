@@ -4,7 +4,7 @@ import type { AppEnv, Artifact, Outage } from "../types";
 import { CATEGORIES, SEVERITIES, CURRENT_STATUSES, PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from "../lib/constants";
 import { buildFtsQuery } from "../lib/fts";
 import { canEditOutage, canViewOutage, computeStatusOnEdit, isModerator } from "../lib/outageAccess";
-import { requireAuth, requireVerifiedEmail } from "../middleware/auth";
+import { requireAuth, requireRole, requireVerifiedEmail } from "../middleware/auth";
 import { listArtifacts, uploadArtifact } from "./artifacts";
 import { getComments, createComment } from "./comments";
 
@@ -21,10 +21,10 @@ const createSchema = z.object({
     .length(2)
     .transform((s) => s.toUpperCase()),
   city: z.string().trim().max(200).optional(),
-  start_time: z.string().datetime({ offset: true }).or(z.string().datetime()),
-  end_time: z
-    .union([z.string().datetime({ offset: true }), z.string().datetime(), z.null()])
-    .optional(),
+  // Date-only, no time-of-day — most reporters don't know the exact minute
+  // an outage started, so the field only asks for what's reliably knowable.
+  start_time: z.string().date(),
+  end_time: z.union([z.string().date(), z.null()]).optional(),
   severity: z.enum(SEVERITIES),
   source_url: z.string().trim().url().max(2000).optional(),
   entity: z.string().trim().min(1).max(200),
@@ -80,6 +80,7 @@ outages.get("/", async (c) => {
       where.push("o.status = 'pending_review'");
     } else if (status === "published") {
       where.push("o.status = 'published'");
+      where.push("o.hidden = 0"); // admin-hidden outages stay off the public feed
     } else {
       return c.json({ error: "Invalid status filter" }, 400);
     }
@@ -186,8 +187,28 @@ outages.get("/:id", async (c) => {
   return c.json({ outage, artifacts });
 });
 
+// Human-readable reference number: YYYYMMDD + a 4-digit sequence counting
+// outages already numbered for that UTC date. Sequence is derived by
+// counting existing rows rather than a dedicated counter table — simple,
+// and this app's write volume makes the (very small) race window between
+// the count and the insert a non-issue in practice.
+async function generateOutageNumber(db: D1Database): Promise<string> {
+  const now = new Date();
+  const datePart = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}${String(
+    now.getUTCDate()
+  ).padStart(2, "0")}`;
+  const countRow = await db
+    .prepare(`SELECT COUNT(*) AS n FROM outages WHERE outage_number LIKE ?`)
+    .bind(`${datePart}%`)
+    .first<{ n: number }>();
+  const seq = String((countRow?.n ?? 0) + 1).padStart(4, "0");
+  return `${datePart}${seq}`;
+}
+
 // ------------------------------------------------------------------
-// POST /api/outages — create (draft or submit-for-review)
+// POST /api/outages — create (draft or submit-for-review). A moderator/
+// admin submitting goes straight to published — see computeStatusOnEdit
+// in lib/outageAccess.ts for why the same rule applies on edit.
 // ------------------------------------------------------------------
 outages.post("/", requireAuth, requireVerifiedEmail, async (c) => {
   const body = await c.req.json().catch(() => null);
@@ -198,12 +219,13 @@ outages.post("/", requireAuth, requireVerifiedEmail, async (c) => {
 
   const user = c.get("user")!;
   const d = parsed.data;
-  const status = d.action === "submit" ? "pending_review" : "draft";
+  const status = d.action === "submit" ? (isModerator(user) ? "published" : "pending_review") : "draft";
+  const outageNumber = await generateOutageNumber(c.env.DB);
 
   const outage = await c.env.DB.prepare(
     `INSERT INTO outages
-       (author_id, title, description, category, tags, country, city, start_time, end_time, severity, source_url, status, entity, stock_code, current_status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       (author_id, title, description, category, tags, country, city, start_time, end_time, severity, source_url, status, entity, stock_code, current_status, outage_number)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      RETURNING *`
   )
     .bind(
@@ -221,7 +243,8 @@ outages.post("/", requireAuth, requireVerifiedEmail, async (c) => {
       status,
       d.entity,
       d.stock_code ?? null,
-      d.current_status
+      d.current_status,
+      outageNumber
     )
     .first<Outage>();
 
@@ -251,7 +274,7 @@ outages.patch("/:id", requireAuth, async (c) => {
   }
   const d = parsed.data;
 
-  const { status, clearRejectionReason } = computeStatusOnEdit(existing.status, d.action);
+  const { status, clearRejectionReason } = computeStatusOnEdit(existing.status, d.action, isModerator(user));
 
   const updated = await c.env.DB.prepare(
     `UPDATE outages SET
@@ -287,7 +310,8 @@ outages.patch("/:id", requireAuth, async (c) => {
 // ------------------------------------------------------------------
 // DELETE /api/outages/:id — author-only, draft-only (judgment call: once
 // an outage has ever been submitted for review, it stays as a record —
-// only unsubmitted drafts can be deleted outright).
+// only unsubmitted drafts can be deleted outright). Admins bypass both
+// restrictions: any outage, any status, any owner.
 // ------------------------------------------------------------------
 outages.delete("/:id", requireAuth, async (c) => {
   const id = parseInt(c.req.param("id") ?? "", 10);
@@ -298,10 +322,14 @@ outages.delete("/:id", requireAuth, async (c) => {
     .first<Outage>();
   if (!existing) return c.json({ error: "Not found" }, 404);
 
-  const user = c.get("user");
-  if (!canEditOutage(user, existing)) return c.json({ error: "Forbidden" }, 403);
-  if (existing.status !== "draft") {
-    return c.json({ error: "Only draft outages can be deleted" }, 400);
+  const user = c.get("user")!;
+  const isAdminUser = user.role === "admin";
+
+  if (!isAdminUser) {
+    if (!canEditOutage(user, existing)) return c.json({ error: "Forbidden" }, 403);
+    if (existing.status !== "draft") {
+      return c.json({ error: "Only draft outages can be deleted" }, 400);
+    }
   }
 
   // Artifacts are removed from D1 via ON DELETE CASCADE, but their R2
@@ -314,7 +342,65 @@ outages.delete("/:id", requireAuth, async (c) => {
   await Promise.all(toDelete.map((a) => c.env.ARTIFACTS.delete(a.r2_key).catch(() => {})));
 
   await c.env.DB.prepare(`DELETE FROM outages WHERE id = ?`).bind(id).run();
+
+  if (isAdminUser) {
+    await c.env.DB.prepare(
+      `INSERT INTO moderation_log (moderator_id, action, target_type, target_id, reason)
+       VALUES (?, 'delete_outage', 'outage', ?, NULL)`
+    )
+      .bind(user.id, id)
+      .run();
+  }
+
   return c.body(null, 204);
+});
+
+// ------------------------------------------------------------------
+// POST /api/outages/:id/hide — admin-only. Removes an outage from the
+// public feed and single-outage view without deleting it — the record,
+// comments, and attachments all stay intact for the author/moderators.
+// ------------------------------------------------------------------
+outages.post("/:id/hide", requireAuth, requireRole("admin"), async (c) => {
+  const id = parseInt(c.req.param("id") ?? "", 10);
+  if (!id) return c.json({ error: "Invalid id" }, 400);
+
+  const existing = await c.env.DB.prepare(`SELECT * FROM outages WHERE id = ?`).bind(id).first<Outage>();
+  if (!existing) return c.json({ error: "Not found" }, 404);
+
+  const actor = c.get("user")!;
+  await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE outages SET hidden = 1 WHERE id = ?`).bind(id),
+    c.env.DB.prepare(
+      `INSERT INTO moderation_log (moderator_id, action, target_type, target_id, reason)
+       VALUES (?, 'hide_outage', 'outage', ?, NULL)`
+    ).bind(actor.id, id),
+  ]);
+
+  const updated = await c.env.DB.prepare(`SELECT * FROM outages WHERE id = ?`).bind(id).first<Outage>();
+  return c.json({ outage: updated });
+});
+
+// ------------------------------------------------------------------
+// POST /api/outages/:id/unhide — admin-only.
+// ------------------------------------------------------------------
+outages.post("/:id/unhide", requireAuth, requireRole("admin"), async (c) => {
+  const id = parseInt(c.req.param("id") ?? "", 10);
+  if (!id) return c.json({ error: "Invalid id" }, 400);
+
+  const existing = await c.env.DB.prepare(`SELECT * FROM outages WHERE id = ?`).bind(id).first<Outage>();
+  if (!existing) return c.json({ error: "Not found" }, 404);
+
+  const actor = c.get("user")!;
+  await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE outages SET hidden = 0 WHERE id = ?`).bind(id),
+    c.env.DB.prepare(
+      `INSERT INTO moderation_log (moderator_id, action, target_type, target_id, reason)
+       VALUES (?, 'unhide_outage', 'outage', ?, NULL)`
+    ).bind(actor.id, id),
+  ]);
+
+  const updated = await c.env.DB.prepare(`SELECT * FROM outages WHERE id = ?`).bind(id).first<Outage>();
+  return c.json({ outage: updated });
 });
 
 // Nested sub-resources

@@ -3,6 +3,8 @@ import { initNav, isModerator } from "./nav.js";
 import {
   escapeHtml,
   formatDateTime,
+  formatDate,
+  formatDuration,
   severityBadge,
   statusBadge,
   categoryBadge,
@@ -115,10 +117,17 @@ async function load() {
         ${categoryBadge(outage.category)}
         ${currentStatusBadge(outage.current_status)}
         ${statusBadge(outage.status)}
+        ${outage.hidden ? `<span class="badge badge-frozen">hidden</span>` : ""}
+        <span class="text-muted mono" style="font-size: var(--text-xs);">#${escapeHtml(outage.outage_number)}</span>
       </div>
       <h1 class="detail-title">${escapeHtml(outage.title)}</h1>
       <p class="text-secondary" style="margin-top: calc(var(--space-1) * -1); margin-bottom: var(--space-4);">${escapeHtml(outage.entity)}</p>
 
+      ${
+        outage.hidden
+          ? alertHtml("warning", "This outage is hidden from the public feed by an admin. Only you and moderators/admins can see it.")
+          : ""
+      }
       ${
         outage.status === "rejected" && outage.rejection_reason
           ? alertHtml("warning", `Rejected: ${outage.rejection_reason}`)
@@ -132,11 +141,15 @@ async function load() {
         </div>
         <div>
           <div class="detail-meta-label">Started</div>
-          <div class="detail-meta-value mono">${formatDateTime(outage.start_time)}</div>
+          <div class="detail-meta-value mono">${formatDate(outage.start_time)}</div>
         </div>
         <div>
           <div class="detail-meta-label">Ended</div>
-          <div class="detail-meta-value mono">${outage.end_time ? formatDateTime(outage.end_time) : "Ongoing"}</div>
+          <div class="detail-meta-value mono">${outage.end_time ? formatDate(outage.end_time) : "Ongoing"}</div>
+        </div>
+        <div>
+          <div class="detail-meta-label">Duration</div>
+          <div class="detail-meta-value mono">${formatDuration(outage.start_time, outage.end_time)}</div>
         </div>
         <div>
           <div class="detail-meta-label">Stock code</div>

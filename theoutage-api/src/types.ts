@@ -60,6 +60,8 @@ export interface Outage {
   entity: string;
   stock_code: string | null;
   current_status: CurrentStatus;
+  outage_number: string;
+  hidden: number;
 }
 
 export interface Artifact {

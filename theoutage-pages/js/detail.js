@@ -71,7 +71,7 @@ async function loadStockPrice(code) {
       stale ? ` <span class="text-muted">(cached)</span>` : ""
     }`;
   } catch {
-    el.innerHTML = `<span class="text-muted">price unavailable</span>`;
+    el.innerHTML = `<span class="text-muted">price unavailable (US-listed tickers only for now)</span>`;
   }
 }
 

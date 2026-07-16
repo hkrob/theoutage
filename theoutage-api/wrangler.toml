@@ -59,3 +59,5 @@ PBKDF2_ITERATIONS = "100000"
 #   SESSION_HMAC_SECRET   64+ char random hex string, signs the session cookie
 #   RESEND_API_KEY        Resend API key
 #   RESEND_FROM_EMAIL     verified Resend sender address, e.g. noreply@TheOutage.robcloud.qzz.io
+#   FINNHUB_API_KEY       Finnhub API key (free tier: https://finnhub.io/register) — powers
+#                         GET /api/stock-quote/:code. Route 503s cleanly if unset.

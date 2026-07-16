@@ -12,6 +12,7 @@ export interface Env {
   SESSION_HMAC_SECRET: string;
   RESEND_API_KEY: string;
   RESEND_FROM_EMAIL: string;
+  FINNHUB_API_KEY: string;
 }
 
 export type Role = "user" | "moderator" | "admin";
@@ -68,6 +69,14 @@ export interface Artifact {
   size_bytes: number;
   is_primary: number;
   caption: string | null;
+}
+
+export interface StockQuote {
+  code: string;
+  price: number;
+  change: number;
+  percent_change: number;
+  fetched_at: string;
 }
 
 export type CommentStatus = "live" | "removed";

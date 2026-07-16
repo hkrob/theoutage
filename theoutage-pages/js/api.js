@@ -71,6 +71,7 @@ export const api = {
   createOutage: (payload) => apiFetch("/outages", { method: "POST", body: payload }),
   updateOutage: (id, payload) => apiFetch(`/outages/${id}`, { method: "PATCH", body: payload }),
   deleteOutage: (id) => apiFetch(`/outages/${id}`, { method: "DELETE" }),
+  getStockQuote: (code) => apiFetch(`/stock-quote/${encodeURIComponent(code)}`),
 
   // ---- artifacts ----
   listArtifacts: (outageId) => apiFetch(`/outages/${outageId}/artifacts`),

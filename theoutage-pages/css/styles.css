@@ -518,6 +518,13 @@ textarea:focus {
   font-family: var(--font-mono);
 }
 
+.text-success {
+  color: var(--success);
+}
+.text-danger {
+  color: var(--danger);
+}
+
 .text-muted {
   color: var(--text-muted);
 }

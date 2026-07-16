@@ -60,6 +60,21 @@ function galleryHtml(artifacts, isOwner) {
   `;
 }
 
+async function loadStockPrice(code) {
+  const el = document.getElementById("stock-price");
+  if (!el) return;
+  try {
+    const { quote, stale } = await api.getStockQuote(code);
+    const sign = quote.change > 0 ? "+" : "";
+    const colorClass = quote.change > 0 ? "text-success" : quote.change < 0 ? "text-danger" : "text-muted";
+    el.innerHTML = `<span class="${colorClass}">$${quote.price.toFixed(2)} (${sign}${quote.percent_change.toFixed(2)}%)</span>${
+      stale ? ` <span class="text-muted">(cached)</span>` : ""
+    }`;
+  } catch {
+    el.innerHTML = `<span class="text-muted">price unavailable</span>`;
+  }
+}
+
 function commentHtml(c, canModerate) {
   return `
     <div class="comment" data-comment-id="${c.id}">
@@ -125,7 +140,9 @@ async function load() {
         </div>
         <div>
           <div class="detail-meta-label">Stock code</div>
-          <div class="detail-meta-value mono">${escapeHtml(outage.stock_code || "—")}</div>
+          <div class="detail-meta-value mono">${escapeHtml(outage.stock_code || "—")}${
+            outage.stock_code ? ` <span id="stock-price"><span class="text-muted">loading…</span></span>` : ""
+          }</div>
         </div>
         <div>
           <div class="detail-meta-label">Source</div>
@@ -162,6 +179,7 @@ async function load() {
   renderModeratorActions(outage, canModerate);
   renderUploadForm(outage, isOwner);
   loadComments(outage);
+  if (outage.stock_code) loadStockPrice(outage.stock_code);
 
   document.querySelectorAll(".set-primary-btn").forEach((btn) =>
     btn.addEventListener("click", async () => {

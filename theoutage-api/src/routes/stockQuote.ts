@@ -46,12 +46,23 @@ interface TwelveDataQuote {
   percent_change?: string;
 }
 
-// Twelve Data's free tier covers international exchanges Finnhub's doesn't
-// (e.g. ASX) — the fallback for tickers Finnhub can't price. Numeric fields
-// come back as strings; a missing/unparseable `close` means "try nothing
-// else," same null-on-no-data contract as fetchFromFinnhub above.
+// Twelve Data covers some international exchanges Finnhub's free tier
+// doesn't, but NOT all of them for free — ASX specifically 404s with
+// "available starting with the Pro or Venture plan" even with the right
+// request shape (confirmed 2026-07-16). This is a best-effort fallback,
+// not a guarantee every non-US ticker resolves.
+//
+// Unlike Finnhub, Twelve Data doesn't understand the Yahoo-style ".AX"/
+// ".L"/etc. suffix — passing it verbatim 404s ("invalid symbol"). Strip a
+// trailing 1-3 letter suffix and pass the bare symbol; this matches
+// Finnhub's format for plain US tickers (the common case) and gives
+// suffixed ones at least a chance without needing a separate stored
+// exchange field. Numeric fields come back as strings; a missing/
+// unparseable `close` means "try nothing else," same null-on-no-data
+// contract as fetchFromFinnhub above.
 async function fetchFromTwelveData(code: string, apiKey: string): Promise<QuoteResult | null> {
-  const res = await fetch(`https://api.twelvedata.com/quote?symbol=${encodeURIComponent(code)}&apikey=${apiKey}`);
+  const bareSymbol = code.replace(/\.[A-Z]{1,3}$/, "");
+  const res = await fetch(`https://api.twelvedata.com/quote?symbol=${encodeURIComponent(bareSymbol)}&apikey=${apiKey}`);
   if (!res.ok) {
     console.error(`[stock-quote] Twelve Data ${res.status} for ${code}: ${await res.text().catch(() => "")}`);
     return null;

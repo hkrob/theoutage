@@ -35,6 +35,9 @@ export type AppEnv = { Bindings: Env; Variables: Variables };
 
 export type OutageStatus = "draft" | "pending_review" | "published" | "rejected";
 export type Severity = "P3 Low" | "P2 Medium" | "P1 High";
+// Real-world incident status (independent of OutageStatus, which is the
+// moderation workflow state) — standard status-page vocabulary.
+export type CurrentStatus = "investigating" | "identified" | "monitoring" | "resolved";
 
 export interface Outage {
   id: number;
@@ -52,6 +55,9 @@ export interface Outage {
   status: OutageStatus;
   rejection_reason: string | null;
   created_at: string;
+  entity: string;
+  stock_code: string | null;
+  current_status: CurrentStatus;
 }
 
 export interface Artifact {

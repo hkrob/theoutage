@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guide — TheOutage</title>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<nav class="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href="/"><span class="brand-dot"></span> TheOutage</a>
+    <div class="nav-links" id="nav-auth-area"></div>
+  </div>
+</nav>
+
+<main class="page">
+  <div class="container" style="max-width: 760px;">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Guide</h1>
+        <p class="page-subtitle">How TheOutage works, and why each field on a submission exists.</p>
+      </div>
+    </div>
+
+    <div class="detail-panel">
+      <h2 class="section-title">What this is</h2>
+      <p>TheOutage is a public, community-maintained record of major outages — power, internet, cloud, transport, water, telecom, financial, healthcare, government, and other infrastructure incidents. Anyone can submit a report; every submission is checked by a moderator before it goes live, so the published feed stays accurate and free of spam.</p>
+    </div>
+
+    <div class="detail-panel">
+      <h2 class="section-title">The submission workflow</h2>
+      <p>Every outage report moves through a small set of states:</p>
+      <ul style="margin: var(--space-3) 0; padding-left: 1.4em; color: var(--text-secondary);">
+        <li><strong>Draft</strong> — saved but not submitted. Only you can see it. Edit or delete it freely.</li>
+        <li><strong>Pending review</strong> — submitted, waiting for a moderator. Visible to you and to moderators/admins, not to the public.</li>
+        <li><strong>Published</strong> — approved and live on the public feed.</li>
+        <li><strong>Rejected</strong> — a moderator sent it back with a reason (shown on the outage page). Edit and resubmit any time.</li>
+      </ul>
+      <p><strong>Editing a published outage always sends it back to "pending review"</strong> — any change, however small, gets a fresh moderation pass before it's public again. This keeps the public record trustworthy: nothing changes on the live feed without a moderator seeing it first.</p>
+      <p>Once an outage has ever been submitted for review, it can't be deleted outright (it's part of the historical record) — only unsubmitted drafts can be removed completely.</p>
+    </div>
+
+    <div class="detail-panel">
+      <h2 class="section-title">Fields, and why they're there</h2>
+
+      <div class="detail-meta-label" style="margin-top: 0;">Title</div>
+      <p class="text-secondary">A short, specific headline — what happened and roughly where. This is what shows up in search results and the feed.</p>
+
+      <div class="detail-meta-label">Entity</div>
+      <p class="text-secondary">The company, organisation, or department actually responsible for the affected system — e.g. the utility, cloud provider, airline, or government agency. This is what makes the record searchable by "who," not just "what," and is separate from the Title so it stays consistent even when headlines are worded differently.</p>
+
+      <div class="detail-meta-label">Stock code <span class="text-muted">(optional)</span></div>
+      <p class="text-secondary">The ticker symbol for the impacted company, if it's publicly traded (e.g. <code>AAPL</code>). Useful for anyone cross-referencing outages against market activity. Left blank for entities that aren't publicly traded — most government agencies, utilities, and smaller organisations.</p>
+
+      <div class="detail-meta-label">Description</div>
+      <p class="text-secondary">The full account: what happened, the scope of impact, and the cause if known. This is what gets full-text searched.</p>
+
+      <div class="detail-meta-label">Category</div>
+      <p class="text-secondary">The kind of infrastructure affected (power, internet, cloud, transport, water, telecom, financial, healthcare, government, other) — the main way the feed gets filtered.</p>
+
+      <div class="detail-meta-label">Severity</div>
+      <p class="text-secondary"><strong>P1 High</strong>, <strong>P2 Medium</strong>, or <strong>P3 Low</strong> — how serious the outage is, independent of category. The naming follows standard incident-priority convention (P1 = most severe).</p>
+
+      <div class="detail-meta-label">Current status</div>
+      <p class="text-secondary">Where the <em>incident itself</em> stands right now — <strong>Investigating</strong>, <strong>Identified</strong>, <strong>Monitoring</strong>, or <strong>Resolved</strong>. This is deliberately separate from the moderation status above: an outage can be "Published" (moderators have approved the report as accurate) while its current status is still "Investigating" (the underlying incident isn't over). Update this as an outage develops — note that, like any edit to a published outage, changing it sends the report back for a quick re-review.</p>
+
+      <div class="detail-meta-label">Tags <span class="text-muted">(optional)</span></div>
+      <p class="text-secondary">Free-text, comma-separated keywords for anything the fixed fields don't capture (e.g. a specific cause like "transformer" or "heatwave").</p>
+
+      <div class="detail-meta-label">Country / City</div>
+      <p class="text-secondary">Where the outage happened. Country is a fixed list for consistent filtering; city is free text and optional since not every outage is city-scoped.</p>
+
+      <div class="detail-meta-label">Started / Ended</div>
+      <p class="text-secondary">When the incident began, and when it ended — leave "Ended" blank and check "still ongoing" if it hasn't resolved yet, or you simply don't know.</p>
+
+      <div class="detail-meta-label">Source link <span class="text-muted">(optional)</span></div>
+      <p class="text-secondary">A link backing up the report — a news article, an official status page, a company statement.</p>
+
+      <div class="detail-meta-label">Attachments <span class="text-muted">(optional)</span></div>
+      <p class="text-secondary">Screenshots or other files supporting the report, added after the outage is created. The first image becomes the thumbnail shown on the feed unless you mark a different one as primary.</p>
+    </div>
+
+    <div class="detail-panel">
+      <h2 class="section-title">Roles</h2>
+      <ul style="margin: var(--space-3) 0; padding-left: 1.4em; color: var(--text-secondary);">
+        <li><strong>User</strong> — the default. Submit outages, comment on published ones, edit/delete your own drafts.</li>
+        <li><strong>Moderator</strong> — everything a user can do, plus approve/reject pending submissions and remove comments.</li>
+        <li><strong>Admin</strong> — everything a moderator can do, plus manage user accounts from the <a href="/admin.html">Admin</a> page: change access level, freeze/unfreeze, reset access, manually verify an email, create accounts directly, delete accounts, and view any user's full submission history.</li>
+      </ul>
+      <p>Email verification (via the magic-link sign-in email) is required before you can submit an outage or post a comment.</p>
+    </div>
+
+    <div class="detail-panel">
+      <h2 class="section-title">Comments</h2>
+      <p>Open on published outages only, for anyone with a verified email. Moderators/admins can remove a comment with a reason (shown to the commenter) and an optional internal note.</p>
+    </div>
+  </div>
+</main>
+
+<footer>TheOutage — a public record of major outages.</footer>
+
+<script type="module" src="/js/guide.js"></script>
+</body>
+</html>

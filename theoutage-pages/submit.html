@@ -31,6 +31,17 @@
         <input type="text" id="title" name="title" required maxlength="300" placeholder="e.g. Regional power grid failure — Northeast US" />
       </div>
 
+      <div class="field-row">
+        <div class="field">
+          <label for="entity">Entity</label>
+          <input type="text" id="entity" name="entity" required maxlength="200" placeholder="Company, organisation, or department responsible" />
+        </div>
+        <div class="field">
+          <label for="stock_code">Stock code <span class="text-muted">(optional)</span></label>
+          <input type="text" id="stock_code" name="stock_code" maxlength="20" placeholder="e.g. AAPL" />
+        </div>
+      </div>
+
       <div class="field">
         <label for="description">Description</label>
         <textarea id="description" name="description" required maxlength="20000" placeholder="What happened, scope, impact, any known cause…"></textarea>
@@ -45,6 +56,11 @@
           <label for="severity">Severity</label>
           <select id="severity" name="severity" required></select>
         </div>
+      </div>
+
+      <div class="field">
+        <label for="current_status">Current status</label>
+        <select id="current_status" name="current_status" required></select>
       </div>
 
       <div class="field">

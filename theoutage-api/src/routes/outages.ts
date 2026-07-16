@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv, Artifact, Outage } from "../types";
-import { CATEGORIES, SEVERITIES, PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from "../lib/constants";
+import { CATEGORIES, SEVERITIES, CURRENT_STATUSES, PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from "../lib/constants";
 import { buildFtsQuery } from "../lib/fts";
 import { canEditOutage, canViewOutage, computeStatusOnEdit, isModerator } from "../lib/outageAccess";
 import { requireAuth, requireVerifiedEmail } from "../middleware/auth";
@@ -27,6 +27,9 @@ const createSchema = z.object({
     .optional(),
   severity: z.enum(SEVERITIES),
   source_url: z.string().trim().url().max(2000).optional(),
+  entity: z.string().trim().min(1).max(200),
+  stock_code: z.string().trim().max(20).optional(),
+  current_status: z.enum(CURRENT_STATUSES).default("investigating"),
   action: z.enum(["draft", "submit"]).default("draft"),
 });
 
@@ -37,17 +40,31 @@ const updateSchema = createSchema.partial().extend({
 
 // ------------------------------------------------------------------
 // GET /api/outages — public feed + search/filters + moderator "pending" view
-//   ?q=&category=&severity=&country=&date_from=&date_to=&status=&mine=1&page=&pageSize=
+//   ?q=&category=&severity=&country=&date_from=&date_to=&status=&mine=1&author_id=&page=&pageSize=
 // ------------------------------------------------------------------
 outages.get("/", async (c) => {
   const user = c.get("user");
   const mine = c.req.query("mine") === "1";
+  const authorIdParam = c.req.query("author_id");
   const statusParam = c.req.query("status");
 
   const where: string[] = [];
   const params: unknown[] = [];
 
-  if (mine) {
+  if (authorIdParam) {
+    // Admin/moderator viewing a specific user's submissions (any status) —
+    // e.g. from the admin page. Distinct from `mine`, which is scoped to
+    // the caller's own id and doesn't require an elevated role.
+    if (!isModerator(user)) return c.json({ error: "Forbidden" }, 403);
+    const authorId = parseInt(authorIdParam, 10);
+    if (!authorId) return c.json({ error: "Invalid author_id" }, 400);
+    where.push("o.author_id = ?");
+    params.push(authorId);
+    if (statusParam) {
+      where.push("o.status = ?");
+      params.push(statusParam);
+    }
+  } else if (mine) {
     if (!user) return c.json({ error: "Authentication required" }, 401);
     where.push("o.author_id = ?");
     params.push(user.id);
@@ -185,8 +202,8 @@ outages.post("/", requireAuth, requireVerifiedEmail, async (c) => {
 
   const outage = await c.env.DB.prepare(
     `INSERT INTO outages
-       (author_id, title, description, category, tags, country, city, start_time, end_time, severity, source_url, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       (author_id, title, description, category, tags, country, city, start_time, end_time, severity, source_url, status, entity, stock_code, current_status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      RETURNING *`
   )
     .bind(
@@ -201,7 +218,10 @@ outages.post("/", requireAuth, requireVerifiedEmail, async (c) => {
       d.end_time ?? null,
       d.severity,
       d.source_url ?? null,
-      status
+      status,
+      d.entity,
+      d.stock_code ?? null,
+      d.current_status
     )
     .first<Outage>();
 
@@ -237,7 +257,7 @@ outages.patch("/:id", requireAuth, async (c) => {
     `UPDATE outages SET
        title = ?, description = ?, category = ?, tags = ?, country = ?, city = ?,
        start_time = ?, end_time = ?, severity = ?, source_url = ?,
-       status = ?, rejection_reason = ?
+       status = ?, rejection_reason = ?, entity = ?, stock_code = ?, current_status = ?
      WHERE id = ?
      RETURNING *`
   )
@@ -254,6 +274,9 @@ outages.patch("/:id", requireAuth, async (c) => {
       d.source_url ?? existing.source_url,
       status,
       clearRejectionReason ? null : existing.rejection_reason,
+      d.entity ?? existing.entity,
+      d.stock_code ?? existing.stock_code,
+      d.current_status ?? existing.current_status,
       id
     )
     .first<Outage>();

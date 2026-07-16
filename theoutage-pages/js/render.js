@@ -57,6 +57,18 @@ export function categoryBadge(category) {
   return `<span class="badge badge-category">${escapeHtml(category)}</span>`;
 }
 
+const CURRENT_STATUS_LABELS = {
+  investigating: "Investigating",
+  identified: "Identified",
+  monitoring: "Monitoring",
+  resolved: "Resolved",
+};
+
+export function currentStatusBadge(currentStatus) {
+  const label = CURRENT_STATUS_LABELS[currentStatus] || currentStatus;
+  return `<span class="badge badge-current-status-${escapeHtml(currentStatus)}">${escapeHtml(label)}</span>`;
+}
+
 /** Renders one feed card. `outage` is a row from GET /api/outages. */
 export function outageCardHtml(outage) {
   const thumb = outage.primary_artifact_id
@@ -72,10 +84,12 @@ export function outageCardHtml(outage) {
         <div class="outage-card-top">
           ${severityBadge(outage.severity)}
           ${categoryBadge(outage.category)}
+          ${currentStatusBadge(outage.current_status)}
           ${outage.status !== "published" ? statusBadge(outage.status) : ""}
         </div>
         <h3 class="outage-card-title">${escapeHtml(outage.title)}</h3>
         <div class="outage-card-meta">
+          <span class="text-secondary">${escapeHtml(outage.entity)}</span>
           <span>${escapeHtml(location)}</span>
           <span class="mono">${formatDateTime(outage.start_time)}</span>
         </div>

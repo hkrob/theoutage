@@ -16,6 +16,7 @@ export async function initNav() {
     if (mount) {
       if (user) {
         mount.innerHTML = `
+          <a href="/guide.html">Guide</a>
           <a href="/submit.html">Submit outage</a>
           <a href="/dashboard.html">My submissions</a>
           ${user.role === "admin" ? `<a href="/admin.html">Admin</a>` : ""}
@@ -28,7 +29,7 @@ export async function initNav() {
           window.location.href = "/";
         });
       } else {
-        mount.innerHTML = `<a href="/login.html">Log in</a>`;
+        mount.innerHTML = `<a href="/guide.html">Guide</a> <a href="/login.html">Log in</a>`;
       }
     }
 

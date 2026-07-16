@@ -1,6 +1,6 @@
 import { api, ApiError } from "./api.js";
 import { requireUser } from "./nav.js";
-import { CATEGORIES, SEVERITIES, COUNTRIES } from "./constants.js";
+import { CATEGORIES, SEVERITIES, COUNTRIES, CURRENT_STATUSES } from "./constants.js";
 import { alertHtml } from "./render.js";
 
 const outageId = new URLSearchParams(window.location.search).get("id");
@@ -35,6 +35,8 @@ function populateSelect(id, options) {
 populateSelect("category", CATEGORIES);
 populateSelect("severity", SEVERITIES);
 populateSelect("country", COUNTRIES);
+populateSelect("current_status", CURRENT_STATUSES);
+document.getElementById("current_status").value = "investigating";
 
 function toDatetimeLocalValue(iso) {
   if (!iso) return "";
@@ -52,9 +54,12 @@ function readForm() {
   const endOngoing = document.getElementById("ongoing").checked;
   return {
     title: document.getElementById("title").value.trim(),
+    entity: document.getElementById("entity").value.trim(),
+    stock_code: document.getElementById("stock_code").value.trim() || undefined,
     description: document.getElementById("description").value.trim(),
     category: document.getElementById("category").value,
     severity: document.getElementById("severity").value,
+    current_status: document.getElementById("current_status").value,
     tags: document.getElementById("tags").value.trim() || undefined,
     country: document.getElementById("country").value,
     city: document.getElementById("city").value.trim() || undefined,
@@ -66,9 +71,12 @@ function readForm() {
 
 function fillForm(outage) {
   document.getElementById("title").value = outage.title;
+  document.getElementById("entity").value = outage.entity || "";
+  document.getElementById("stock_code").value = outage.stock_code || "";
   document.getElementById("description").value = outage.description;
   document.getElementById("category").value = outage.category;
   document.getElementById("severity").value = outage.severity;
+  document.getElementById("current_status").value = outage.current_status || "investigating";
   document.getElementById("tags").value = outage.tags || "";
   document.getElementById("country").value = outage.country;
   document.getElementById("city").value = outage.city || "";

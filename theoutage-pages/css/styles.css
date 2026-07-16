@@ -79,6 +79,13 @@ body {
   padding: 0;
 }
 
+html {
+  /* This site is fixed dark, not a toggle — tells the browser to render
+     native controls (date/time pickers, scrollbars) in a dark style
+     instead of the default light chrome, which otherwise clashes badly. */
+  color-scheme: dark;
+}
+
 body {
   background: var(--bg);
   color: var(--text-primary);
@@ -356,6 +363,23 @@ textarea:focus {
 .badge-status-rejected {
   color: var(--status-rejected);
   background: var(--danger-bg);
+}
+
+.badge-current-status-investigating {
+  color: var(--severity-p1);
+  background: var(--danger-bg);
+}
+.badge-current-status-identified {
+  color: var(--status-pending);
+  background: var(--warning-bg);
+}
+.badge-current-status-monitoring {
+  color: var(--severity-p2);
+  background: rgba(77, 159, 255, 0.12);
+}
+.badge-current-status-resolved {
+  color: var(--status-published);
+  background: var(--success-bg);
 }
 
 .badge-category {

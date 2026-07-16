@@ -50,6 +50,7 @@ function rowHtml(u) {
         <select class="role-select" data-id="${u.id}" ${isSelf ? "disabled" : ""}>
           ${ROLES.map((r) => `<option value="${r}" ${r === u.role ? "selected" : ""}>${r}</option>`).join("")}
         </select>
+        <a class="btn btn-sm" href="/dashboard.html?author_id=${u.id}&name=${encodeURIComponent(u.display_name)}">View submissions</a>
         ${!u.email_verified ? `<button class="btn btn-sm verify-email-btn" data-id="${u.id}" type="button">Verify email</button>` : ""}
         ${
           isSelf

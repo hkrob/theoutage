@@ -4,8 +4,8 @@ Outage-tracking web app: Cloudflare Pages (static frontend) + Cloudflare Workers
 
 ## Layout
 
-- `theoutage-api/` — Cloudflare Worker (Hono, TypeScript). Routes: `src/routes/{auth,outages,artifacts,comments,moderation}.ts`. Libs: `src/lib/{crypto,session,email,rateLimit,constants,fts,outageAccess}.ts`. Middleware: `src/middleware/auth.ts`.
-- `theoutage-pages/` — static site, no build step. Vanilla HTML/CSS/ES modules. Pages: `index.html` (feed), `outage.html` (detail), `submit.html` (create/edit), `dashboard.html` (my submissions), `login.html`, `reset-password.html`, `auth-callback.html`.
+- `theoutage-api/` — Cloudflare Worker (Hono, TypeScript). Routes: `src/routes/{auth,outages,artifacts,comments,moderation,admin}.ts`. Libs: `src/lib/{crypto,session,email,rateLimit,constants,fts,outageAccess}.ts`. Middleware: `src/middleware/auth.ts`.
+- `theoutage-pages/` — static site, no build step. Vanilla HTML/CSS/ES modules. Pages: `index.html` (feed), `outage.html` (detail), `submit.html` (create/edit), `dashboard.html` (my submissions — also used by admins to view any user's submissions via `?author_id=`), `admin.html` (user management, admin-only), `guide.html` (field/workflow explainer, public), `login.html`, `reset-password.html`, `auth-callback.html`.
 - `theoutage-api/migrations/0001_init.sql`, `0002_rate_limits.sql` — schema reference copies.
 - `DEPLOYMENT.md` — full runbook (read this first for deploy/ops questions).
 
@@ -41,3 +41,5 @@ Everything is live and all smoke-test flows have been verified end-to-end:
 - Session auth via signed HttpOnly cookies (HMAC-SHA256 via Web Crypto).
 - Moderator/admin-only routes gated with `requireRole(...)` middleware in `src/middleware/auth.ts`.
 - Moderation actions (`approve`/`reject`/`remove comment`) write to `moderation_log` and best-effort send a Resend email — email failures must never roll back the moderation action itself (see `notifyBestEffort` wrapper in `src/routes/moderation.ts`).
+- Admin user-management actions (role change, freeze/unfreeze, reset access, verify email, create/delete user) also write to `moderation_log` — same audit trail as moderation actions, just a wider `action` enum. Adding a new admin action means a migration widening that CHECK constraint (see `theoutage-api/migrations/0005`–`0008` for the pattern).
+- **`theoutage-pages/guide.html` explains every outage field and the submission workflow to end users — keep it in sync whenever a field, role capability, or workflow step changes.** It's not derived from code automatically; if you add/remove an outage field or change how moderation/admin works, update the guide in the same change.

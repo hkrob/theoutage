@@ -6,6 +6,7 @@ import {
   severityBadge,
   statusBadge,
   categoryBadge,
+  currentStatusBadge,
   alertHtml,
 } from "./render.js";
 
@@ -97,9 +98,11 @@ async function load() {
       <div class="detail-badges">
         ${severityBadge(outage.severity)}
         ${categoryBadge(outage.category)}
+        ${currentStatusBadge(outage.current_status)}
         ${statusBadge(outage.status)}
       </div>
       <h1 class="detail-title">${escapeHtml(outage.title)}</h1>
+      <p class="text-secondary" style="margin-top: calc(var(--space-1) * -1); margin-bottom: var(--space-4);">${escapeHtml(outage.entity)}</p>
 
       ${
         outage.status === "rejected" && outage.rejection_reason
@@ -119,6 +122,10 @@ async function load() {
         <div>
           <div class="detail-meta-label">Ended</div>
           <div class="detail-meta-value mono">${outage.end_time ? formatDateTime(outage.end_time) : "Ongoing"}</div>
+        </div>
+        <div>
+          <div class="detail-meta-label">Stock code</div>
+          <div class="detail-meta-value mono">${escapeHtml(outage.stock_code || "—")}</div>
         </div>
         <div>
           <div class="detail-meta-label">Source</div>

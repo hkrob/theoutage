@@ -19,6 +19,13 @@ export const SEVERITIES = ["P3 Low", "P2 Medium", "P1 High"];
 
 export const STATUSES = ["draft", "pending_review", "published", "rejected"];
 
+export const CURRENT_STATUSES = [
+  ["investigating", "Investigating"],
+  ["identified", "Identified"],
+  ["monitoring", "Monitoring"],
+  ["resolved", "Resolved"],
+];
+
 export const MAX_ARTIFACT_BYTES = 10 * 1024 * 1024;
 export const MAX_OUTAGE_ARTIFACT_TOTAL_BYTES = 50 * 1024 * 1024;
 

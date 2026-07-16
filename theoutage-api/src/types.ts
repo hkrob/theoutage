@@ -13,6 +13,7 @@ export interface Env {
   RESEND_API_KEY: string;
   RESEND_FROM_EMAIL: string;
   FINNHUB_API_KEY: string;
+  TWELVEDATA_API_KEY: string;
 }
 
 export type Role = "user" | "moderator" | "admin";

@@ -61,3 +61,8 @@ PBKDF2_ITERATIONS = "100000"
 #   RESEND_FROM_EMAIL     verified Resend sender address, e.g. noreply@TheOutage.robcloud.qzz.io
 #   FINNHUB_API_KEY       Finnhub API key (free tier: https://finnhub.io/register) — powers
 #                         GET /api/stock-quote/:code. Route 503s cleanly if unset.
+#                         Free tier is US-listed exchanges only.
+#   TWELVEDATA_API_KEY    Twelve Data API key (free tier: https://twelvedata.com/pricing) —
+#                         fallback for GET /api/stock-quote/:code when Finnhub has no data
+#                         (mainly non-US tickers, e.g. ASX). Optional; falls through cleanly
+#                         if unset and Finnhub also has nothing.

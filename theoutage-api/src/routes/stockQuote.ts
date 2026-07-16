@@ -39,12 +39,18 @@ stockQuote.get("/:code", async (c) => {
     const res = await fetch(
       `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(code)}&token=${c.env.FINNHUB_API_KEY}`
     );
-    if (!res.ok) throw new Error(`Finnhub responded ${res.status}`);
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Finnhub responded ${res.status}: ${body}`);
+    }
     data = await res.json();
   } catch (err) {
+    // 503, not 502 — Cloudflare's edge intercepts 502 responses from any
+    // origin (including Workers) and replaces the body with its own
+    // generic error page, which would silently swallow this JSON.
     console.error("[stock-quote] Finnhub fetch failed:", err);
     if (cached) return c.json({ quote: cached, stale: true });
-    return c.json({ error: "Couldn't fetch a price right now." }, 502);
+    return c.json({ error: "Couldn't fetch a price right now." }, 503);
   }
 
   // Finnhub returns all-zero fields for an unknown/invalid symbol rather

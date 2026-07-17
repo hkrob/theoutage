@@ -225,7 +225,7 @@ outages.post("/", requireAuth, requireVerifiedEmail, async (c) => {
   const outage = await c.env.DB.prepare(
     `INSERT INTO outages
        (author_id, title, description, category, tags, country, city, start_time, end_time, severity, source_url, status, entity, stock_code, current_status, outage_number)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      RETURNING *`
   )
     .bind(

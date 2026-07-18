@@ -10,6 +10,17 @@ export function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
+/**
+ * Returns the URL only if it's a safe http(s) link, else "" — defense in
+ * depth against a `javascript:`/`data:` href slipping through (the backend
+ * also rejects these now). escapeHtml alone doesn't neutralize a bad scheme
+ * since those payloads contain no HTML metacharacters.
+ */
+export function safeUrl(url) {
+  if (!url) return "";
+  return /^https?:\/\//i.test(String(url).trim()) ? url : "";
+}
+
 export function formatDateTime(iso) {
   if (!iso) return "—";
   try {
@@ -80,6 +91,16 @@ export function currentStatusBadge(currentStatus) {
   return `<span class="badge badge-current-status-${escapeHtml(currentStatus)}">${escapeHtml(label)}</span>`;
 }
 
+/** True when the incident itself is still live (no end date, not resolved). */
+export function isOngoing(outage) {
+  return !outage.end_time && outage.current_status !== "resolved";
+}
+
+/** A small pulsing "live" tag for ongoing incidents. */
+export function ongoingTag() {
+  return `<span class="live-tag"><span class="live-dot"></span>Ongoing</span>`;
+}
+
 /** Renders one feed card. `outage` is a row from GET /api/outages. */
 export function outageCardHtml(outage) {
   const thumb = outage.primary_artifact_id
@@ -96,6 +117,7 @@ export function outageCardHtml(outage) {
           ${severityBadge(outage.severity)}
           ${categoryBadge(outage.category)}
           ${currentStatusBadge(outage.current_status)}
+          ${isOngoing(outage) ? ongoingTag() : ""}
           ${outage.status !== "published" ? statusBadge(outage.status) : ""}
         </div>
         <h3 class="outage-card-title">${escapeHtml(outage.title)}</h3>

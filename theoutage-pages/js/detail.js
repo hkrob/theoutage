@@ -2,6 +2,7 @@ import { api, ApiError } from "./api.js";
 import { initNav, isModerator } from "./nav.js";
 import {
   escapeHtml,
+  safeUrl,
   formatDateTime,
   formatDate,
   formatDuration,
@@ -9,6 +10,8 @@ import {
   statusBadge,
   categoryBadge,
   currentStatusBadge,
+  isOngoing,
+  ongoingTag,
   alertHtml,
 } from "./render.js";
 
@@ -116,9 +119,10 @@ async function load() {
         ${severityBadge(outage.severity)}
         ${categoryBadge(outage.category)}
         ${currentStatusBadge(outage.current_status)}
+        ${isOngoing(outage) ? ongoingTag() : ""}
         ${statusBadge(outage.status)}
         ${outage.hidden ? `<span class="badge badge-frozen">hidden</span>` : ""}
-        <span class="text-muted mono" style="font-size: var(--text-xs);">#${escapeHtml(outage.outage_number)}</span>
+        <button class="copy-ref" id="copy-ref-btn" type="button" title="Copy reference number">#${escapeHtml(outage.outage_number)}</button>
       </div>
       <h1 class="detail-title">${escapeHtml(outage.title)}</h1>
       <p class="text-secondary" style="margin-top: calc(var(--space-1) * -1); margin-bottom: var(--space-4);">${escapeHtml(outage.entity)}</p>
@@ -160,8 +164,8 @@ async function load() {
         <div>
           <div class="detail-meta-label">Source</div>
           <div class="detail-meta-value">${
-            outage.source_url
-              ? `<a href="${escapeHtml(outage.source_url)}" target="_blank" rel="noopener">link</a>`
+            safeUrl(outage.source_url)
+              ? `<a href="${escapeHtml(safeUrl(outage.source_url))}" target="_blank" rel="noopener noreferrer">link</a>`
               : "—"
           }</div>
         </div>
@@ -193,6 +197,20 @@ async function load() {
   renderUploadForm(outage, isOwner);
   loadComments(outage);
   if (outage.stock_code) loadStockPrice(outage.stock_code);
+
+  document.getElementById("copy-ref-btn")?.addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    try {
+      await navigator.clipboard.writeText(outage.outage_number);
+      const original = btn.textContent;
+      btn.textContent = "Copied ✓";
+      setTimeout(() => {
+        btn.textContent = original;
+      }, 1200);
+    } catch {
+      /* clipboard unavailable (e.g. insecure context) — no-op */
+    }
+  });
 
   document.querySelectorAll(".set-primary-btn").forEach((btn) =>
     btn.addEventListener("click", async () => {

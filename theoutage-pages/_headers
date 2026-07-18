@@ -3,6 +3,13 @@
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  # CSP as defence-in-depth against XSS. script-src 'self' only — all JS is
+  # loaded from same-origin module files, no inline scripts. style-src allows
+  # 'unsafe-inline' because the markup uses inline style="" attributes (much
+  # lower risk than inline script). Everything else is same-origin; the app
+  # makes no external requests (no CDNs/fonts), which also keeps it fast.
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
 
 # No hashed/versioned filenames here, so let Pages' default long max-age
 # on static assets cause stale JS/CSS after a deploy (browsers would sit on

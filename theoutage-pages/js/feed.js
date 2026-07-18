@@ -1,7 +1,7 @@
 import { api, ApiError } from "./api.js";
 import { initNav, isModerator } from "./nav.js";
 import { CATEGORIES, SEVERITIES, COUNTRIES } from "./constants.js";
-import { outageCardHtml, emptyState, alertHtml } from "./render.js";
+import { outageCardHtml, emptyState, alertHtml, isOngoing } from "./render.js";
 
 const PAGE_SIZE = 20;
 
@@ -93,7 +93,14 @@ async function loadFeed() {
       return;
     }
 
-    feedArea.innerHTML = `<div class="card-list">${results.map(outageCardHtml).join("")}</div>`;
+    const ongoingCount = results.filter(isOngoing).length;
+    const label = apiParams.status === "pending_review" ? "awaiting review" : "matching";
+    const statsBar = `
+      <div class="feed-stats">
+        <strong>${total}</strong> outage${total === 1 ? "" : "s"} ${label}
+        ${ongoingCount > 0 ? `<span class="dot-sep">·</span> <span class="text-danger">${ongoingCount} ongoing on this page</span>` : ""}
+      </div>`;
+    feedArea.innerHTML = statsBar + `<div class="card-list">${results.map(outageCardHtml).join("")}</div>`;
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     if (totalPages > 1) {

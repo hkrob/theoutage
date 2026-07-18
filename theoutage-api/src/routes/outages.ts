@@ -26,7 +26,15 @@ const createSchema = z.object({
   start_time: z.string().date(),
   end_time: z.union([z.string().date(), z.null()]).optional(),
   severity: z.enum(SEVERITIES),
-  source_url: z.string().trim().url().max(2000).optional(),
+  // http(s) only — Zod's .url() also accepts javascript:/data: schemes, which
+  // would be a stored-XSS vector once rendered into the detail page's <a href>.
+  source_url: z
+    .string()
+    .trim()
+    .url()
+    .max(2000)
+    .refine((u) => /^https?:\/\//i.test(u), { message: "Source link must be an http(s) URL" })
+    .optional(),
   entity: z.string().trim().min(1).max(200),
   stock_code: z.string().trim().max(20).optional(),
   current_status: z.enum(CURRENT_STATUSES).default("investigating"),
